@@ -6,4 +6,3 @@
 * [Exercise #4](./4/README.md)
 * [Exercise #5](./5/README.md)
 
-
