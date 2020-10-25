@@ -15,6 +15,7 @@
     <NewsListItemInput @create="createNewsListItem($event);"/>
   </div>
 </template>
+
 <script>
 import NewsListItem from './components/NewsListItem.vue';
 import NewsListItemInput from "./components/NewsListItemInput";
