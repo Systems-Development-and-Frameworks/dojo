@@ -19,7 +19,9 @@ Hacker News is a social news website focusing on computer science and entreprene
 This is how the result should look like:
 
 
-![Demo](images/demo.gif)
+<p align="center">
+  <img src="images/demo.gif" alt="Demo" width="50%">
+<p>
 
 You can use [Vue CLI](https://cli.vuejs.org/) for a quick setup which will setup [single file components](https://vuejs.org/v2/guide/single-file-components.html) for you.
 
