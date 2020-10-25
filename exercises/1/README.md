@@ -19,9 +19,7 @@ Hacker News is a social news website focusing on computer science and entreprene
 This is how the result should look like:
 
 
-<p align="center">
-  <img src="images/demo.gif" alt="Demo" width="50%">
-<p>
+![Demo](images/demo.gif)
 
 You can use [Vue CLI](https://cli.vuejs.org/) for a quick setup which will setup [single file components](https://vuejs.org/v2/guide/single-file-components.html) for you.
 
@@ -29,7 +27,7 @@ Note that the official documentation of VueJS does not recommend using `vue-cli`
 
 Either way is fine, using `vue-cli` is easier but setting up VueJS yourself might be more educational.
 
-Put your code somewhere in this repository. We suggest a monorepo approch with a folder `webapp` below the repository's root folder.
+Put your code somewhere in this repository. We suggest a monorepo approach with a folder `webapp` below the repository's root folder.
 
 ### Objectives
 
