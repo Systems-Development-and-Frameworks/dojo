@@ -1,45 +1,49 @@
 <template>
   <div>
+    <h1>News</h1>
     <div
         v-for="item in sortedNewsListItems"
-        :key="item">
+        :key="item.title">
       <NewsListItem
           :title="item.title"
           :votes="item.votes"
-          @upvote="item.votes++;"
-          @downvote="item.votes--;"
-          @remove-newslistitem="newsListItems.splice(newsListItems.indexOf(item), 1);"
+          @upvote="item.votes++"
+          @downvote="item.votes--"
+          @remove="newsListItems.splice(newsListItems.indexOf(item), 1)"
       />
     </div>
+    <NewsListItemInput @create="createNewsListItem($event);"/>
   </div>
 </template>
-/*
-- alle Daten doppelt -> einmal hier in Data, einmal in der NewsListItem Component
-- wir behandeln die Events beim Erstellen der NewsListItems -> ist das denn das übergeordnete Element im Sinne der Aufgabenstellung?
-  ("The item should not remove itself from the DOM but tell its parent component to do so.")
-- dojo_news/* -> webapp?
-- .gitignore -> node_modules ist excluded aber nicht im .gitignore
-*/
 <script>
 import NewsListItem from './components/NewsListItem.vue';
+import NewsListItemInput from "./components/NewsListItemInput";
 
 export default {
   name: 'App',
   components: {
-    NewsListItem
+    NewsListItem,
+    NewsListItemInput
   },
   data() {
     return {
       newsListItems: [
         {title: "macOS", votes: 0},
-        {title: "Linux", votes: 2},
-        {title: "Windows", votes: 1}
+        {title: "Linux", votes: 0},
+        {title: "Windows", votes: 0}
       ]
     }
   },
+  methods: {
+    createNewsListItem(title) {
+      if (title.trim().length) {
+        this.newsListItems.push({ title: title, votes: 0 });
+      }
+    }
+  },
   computed: {
-    sortedNewsListItems: function(){
-      return [...this.newsListItems].sort((a,b) => a.votes-b.votes);
+    sortedNewsListItems() {
+      return [...this.newsListItems].sort((a, b) => b.votes - a.votes);
     }
   },
 }

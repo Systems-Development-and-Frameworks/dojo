@@ -1,9 +1,9 @@
 <template>
   <div>
-    <h1>{{title}} ({{votes}})</h1>
+    <h2>{{title}} ({{votes}})</h2>
     <button @click="$emit('upvote')">Upvote</button>
     <button @click="$emit('downvote')">Downvote</button>
-    <button @click="$emit('remove-newslistitem')">Remove</button>
+    <button @click="$emit('remove')">Remove</button>
   </div>
 </template>
 
@@ -12,7 +12,7 @@ import {defineComponent} from 'vue';
 
 export default defineComponent({
   name: "NewsListItem",
-  emits: ['upvote', 'downvote','remove-newslistitem'],
+  emits: ['upvote', 'downvote','remove'],
   props: {
     title: {
       type: String,
