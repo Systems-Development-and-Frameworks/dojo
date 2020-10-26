@@ -1,7 +1,7 @@
 <template>
-  <form onsubmit="return false;">
+  <form @submit.prevent="$emit('create', title)">
     <input type="text" v-model="title"/>
-    <input type="submit" value="Add" @click="$emit('create', title)"/>
+    <input type="submit" value="Add"/>
   </form>
 </template>
 
