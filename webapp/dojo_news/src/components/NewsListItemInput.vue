@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="$emit('create', title)">
-    <input type="text" v-model="title"/>
-    <input type="submit" value="Add"/>
+    <input type="text" v-model.trim="title" placeholder="Enter some new news title.."/>
+    <input type="submit" value="Add" :disabled="!title.length"/>
   </form>
 </template>
 

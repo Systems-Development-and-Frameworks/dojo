@@ -36,9 +36,7 @@ export default {
   },
   methods: {
     createNewsListItem(title) {
-      if (title.trim().length) {
-        this.newsListItems.push({ title: title, votes: 0 });
-      }
+      this.newsListItems.push({title: title, votes: 0});
     }
   },
   computed: {
