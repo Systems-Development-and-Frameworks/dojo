@@ -3,7 +3,7 @@
     <h1>News</h1>
     <div
         v-for="item in sortedNewsListItems"
-        :key="item">
+        :key="item.id">
       <NewsListItem
           :title="item.title"
           :votes="item.votes"
@@ -28,10 +28,10 @@ export default {
   data() {
     return {
       newsListItems: [
-        {title: "macOS", votes: 0},
-        {title: "Linux", votes: 0},
-        {title: "Windows", votes: 0}
-      ]
+        {id: 0, title: "macOS", votes: 0},
+        {id: 1, title: "Linux", votes: 0},
+        {id: 2, title: "Windows", votes: 0}
+      ],
     }
   },
   methods: {
@@ -39,7 +39,8 @@ export default {
       this.newsListItems = this.newsListItems.filter(item => item !== itemToRemove);
     },
     createNewsListItem(title) {
-      this.newsListItems.push({title, votes: 0});
+      var id = Math.max(...this.newsListItems.map(i => i.id)) + 1;
+      this.newsListItems.push({id, title, votes: 0});
     }
   },
   computed: {
@@ -47,7 +48,7 @@ export default {
       return [...this.newsListItems].sort((a, b) => b.votes - a.votes);
     }
   },
-}
+};
 </script>
 
 <style>
