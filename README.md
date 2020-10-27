@@ -1,4 +1,4 @@
-# Systems Development and Frameworks - 2020/21 ![Build status](https://github.com/Systems-Development-and-Frameworks/dojo/workflows/Build%2C%20Test%2C%20Lint/badge.svg?branch=exercise2)
+# Systems Development and Frameworks - 2020/21 [![Build status](https://github.com/Systems-Development-and-Frameworks/dojo/workflows/Build%2C%20Test%2C%20Lint/badge.svg?branch=exercise2)](https://github.com/Systems-Development-and-Frameworks/dojo/actions?query=workflow%3A%22Build%2C+Test%2C+Lint%22+branch%3Aexercise2)
 
 This is our homework solutions repository for the course `Systems Development and Frameworks`
 at `Hochschule für Technik und Wirtschaft` in Berlin.
