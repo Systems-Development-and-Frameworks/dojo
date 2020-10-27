@@ -9,7 +9,7 @@
           :votes="item.votes"
           @upvote="item.votes++"
           @downvote="item.votes--"
-          @remove="newsListItems.splice(newsListItems.indexOf(item), 1)"
+          @remove="removeNewsListItem(item)"
       />
     </div>
     <NewsListItemInput @create="createNewsListItem($event);"/>
@@ -35,6 +35,9 @@ export default {
     }
   },
   methods: {
+    removeNewsListItem(itemToRemove) {
+      this.newsListItems = this.newsListItems.filter(item => item !== itemToRemove);
+    },
     createNewsListItem(title) {
       this.newsListItems.push({title: title, votes: 0});
     }
