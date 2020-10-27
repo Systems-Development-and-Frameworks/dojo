@@ -1,5 +1,5 @@
 <template>
-  <form @submit.prevent="$emit('create', title)">
+  <form @submit.prevent="$emit('create', title); title = ''">
     <input type="text" v-model.trim="title" placeholder="Enter some new news title.."/>
     <input type="submit" value="Add" :disabled="!title.length"/>
   </form>
