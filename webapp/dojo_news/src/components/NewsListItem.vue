@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2>{{title}} ({{votes}})</h2>
+    <h2>{{ title }} ({{ votes }})</h2>
     <button @click="$emit('upvote')">Upvote</button>
     <button @click="$emit('downvote')">Downvote</button>
     <button @click="$emit('remove')">Remove</button>
@@ -8,11 +8,9 @@
 </template>
 
 <script>
-import {defineComponent} from 'vue';
-
-export default defineComponent({
+export default {
   name: "NewsListItem",
-  emits: ['upvote', 'downvote','remove'],
+  emits: ['upvote', 'downvote', 'remove'],
   props: {
     title: {
       type: String,
@@ -23,7 +21,7 @@ export default defineComponent({
       required: true
     }
   }
-});
+};
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="app">
     <h1>News</h1>
     <div
         v-for="item in sortedNewsListItems"

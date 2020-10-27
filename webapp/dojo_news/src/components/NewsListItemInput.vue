@@ -6,6 +6,7 @@
 </template>
 
 <script>
+
 export default {
   name: "NewsListItemInput",
   emits: ["create"],
@@ -14,7 +15,7 @@ export default {
       title: ""
     }
   }
-}
+};
 </script>
 
 <style scoped>
