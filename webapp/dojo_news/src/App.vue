@@ -1,6 +1,9 @@
 <template>
   <div id="app">
     <h1>News</h1>
+    <div class="news-list-empty-message" v-if="!newsListItems.length">
+      <span id="list-empty-message">{{ listEmptyMessage }}</span>
+    </div>
     <div
         v-for="item in sortedNewsListItems"
         :key="item.id">
@@ -23,7 +26,13 @@ import NewsListItemInput from "./components/NewsListItemInput";
 export default {
   components: {
     NewsListItem,
-    NewsListItemInput
+    NewsListItemInput,
+  },
+  props: {
+    listEmptyMessage: {
+      type: String,
+      default: "The list is empty :(",
+    },
   },
   data() {
     return {
@@ -59,5 +68,8 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+div.news-list-empty-message {
+  padding: 2rem 0;
 }
 </style>
