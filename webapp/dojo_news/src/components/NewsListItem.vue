@@ -9,7 +9,6 @@
 
 <script>
 export default {
-  name: "NewsListItem",
   emits: ['upvote', 'downvote', 'remove'],
   props: {
     title: {

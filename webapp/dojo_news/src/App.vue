@@ -21,7 +21,6 @@ import NewsListItem from './components/NewsListItem.vue';
 import NewsListItemInput from "./components/NewsListItemInput";
 
 export default {
-  name: 'App',
   components: {
     NewsListItem,
     NewsListItemInput
