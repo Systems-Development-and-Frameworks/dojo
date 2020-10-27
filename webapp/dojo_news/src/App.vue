@@ -3,7 +3,7 @@
     <h1>News</h1>
     <div
         v-for="item in sortedNewsListItems"
-        :key="item.title">
+        :key="item">
       <NewsListItem
           :title="item.title"
           :votes="item.votes"
