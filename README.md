@@ -8,12 +8,12 @@ In [`./exercises`](exercises) you'll find the exercises, in [`./webapp`](webapp)
 ## Setup and run the webapp
 
 All commands assume you're located in the `webapp` directory.
-## Project setup
+### Project setup
 ```
 $ (webapp) npm install
 ```
 
-## Run unit tests
+### Run unit tests
 ```
 $ (webapp) npm run test:unit
 ```
