@@ -39,7 +39,7 @@ export default {
       this.newsListItems = this.newsListItems.filter(item => item !== itemToRemove);
     },
     createNewsListItem(title) {
-      this.newsListItems.push({title: title, votes: 0});
+      this.newsListItems.push({title, votes: 0});
     }
   },
   computed: {
