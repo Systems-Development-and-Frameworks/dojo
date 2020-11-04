@@ -12,7 +12,7 @@
           :votes="item.votes"
           @upvote="item.votes++"
           @downvote="item.votes--"
-          @remove="removeNewsListItem(item)"
+          @remove="removeNewsListItem(item.id)"
       />
     </div>
     <NewsListItemInput @create="createNewsListItem($event);"/>
@@ -33,22 +33,30 @@ export default {
       type: String,
       default: "The list is empty :(",
     },
+    initialNewsListItems: {
+      type: Array,
+      default: () => {
+        return [
+          {id: 0, title: "macOS", votes: 0},
+          {id: 1, title: "Linux", votes: 0},
+          {id: 2, title: "Windows", votes: 0}
+        ]
+      }
+    }
   },
   data() {
     return {
-      newsListItems: [
-        {id: 0, title: "macOS", votes: 0},
-        {id: 1, title: "Linux", votes: 0},
-        {id: 2, title: "Windows", votes: 0}
-      ],
+      newsListItems: [...this.initialNewsListItems],
     }
   },
   methods: {
-    removeNewsListItem(itemToRemove) {
-      this.newsListItems = this.newsListItems.filter(item => item !== itemToRemove);
+    removeNewsListItem(id) {
+      this.newsListItems = this.newsListItems.filter(item => item.id !== id);
     },
     createNewsListItem(title) {
-      var id = Math.max(...this.newsListItems.map(i => i.id)) + 1;
+      var id = this.newsListItems.length
+          ? Math.max(...this.newsListItems.map(i => i.id)) + 1
+          : 0;
       this.newsListItems.push({id, title, votes: 0});
     }
   },
@@ -69,6 +77,7 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
+
 div.news-list-empty-message {
   padding: 2rem 0;
 }
