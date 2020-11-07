@@ -16,6 +16,7 @@
       />
     </div>
     <NewsListItemInput @create="createNewsListItem($event);"/>
+    <button type="button" @click="toggleOrder()" v-if="newsListItems.length" id="reverse-order-button">Reverse Order</button>
   </div>
 </template>
 
@@ -42,11 +43,16 @@ export default {
           {id: 2, title: "Windows", votes: 0}
         ]
       }
+    },
+    initialDescendingOrder: {
+      type: Boolean,
+      default: true
     }
   },
   data() {
     return {
       newsListItems: [...this.initialNewsListItems],
+      descendingOrder: this.initialDescendingOrder
     }
   },
   methods: {
@@ -58,11 +64,17 @@ export default {
           ? Math.max(...this.newsListItems.map(i => i.id)) + 1
           : 0;
       this.newsListItems.push({id, title, votes: 0});
+    },
+    toggleOrder() {
+      this.descendingOrder = !this.descendingOrder;
     }
   },
   computed: {
     sortedNewsListItems() {
-      return [...this.newsListItems].sort((a, b) => b.votes - a.votes);
+      let list = [...this.newsListItems].sort((a, b) => b.votes - a.votes);
+      return this.descendingOrder
+          ? list
+          : list.reverse();
     }
   },
 };
