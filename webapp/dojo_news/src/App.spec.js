@@ -1,4 +1,4 @@
-import {mount, shallowMount} from '@vue/test-utils';
+import {shallowMount} from '@vue/test-utils';
 import App from "./App";
 import 'regenerator-runtime';
 import Vue from "vue";
@@ -129,7 +129,7 @@ describe("Reverse Order Button", () => {
     });
 
     it('Reverse-Button is hidden upon empty list', async () => {
-        const wrapper = mount(App, {
+        const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
                     {id: 0, title: "macOS", votes: 0},
@@ -140,15 +140,10 @@ describe("Reverse Order Button", () => {
         });
         expect(wrapper.text()).toContain("Reverse Order");
 
-        let buttons = wrapper.findAll("button").wrappers;
-        let removeButtons = buttons.filter(x => x.text().includes("Remove"));
-        for (let removeButton of removeButtons) {
-            await removeButton.trigger("click");
-        }
-        // or we just do:
-        // wrapper.vm.removeNewsListItem(0);
-        // await Vue.nextTick();
-        // but we don't, because the current implementation took too long to figure out
+        wrapper.vm.removeNewsListItem(0);
+        wrapper.vm.removeNewsListItem(1);
+        wrapper.vm.removeNewsListItem(2);
+        await Vue.nextTick();
 
         expect(wrapper.text()).not.toContain("Reverse Order");
     });
