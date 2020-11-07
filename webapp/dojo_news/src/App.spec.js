@@ -7,13 +7,13 @@ describe("List Empty Message", () => {
     const listEmptyMessage = "Oh noes, the list is empty!";
 
     it('displays a message on an initially empty list of NewsItems', () => {
-        const wrapperWithNonEmptyList = shallowMount(App, {
+        const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
                 listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: []
             }
         });
-        expect(wrapperWithNonEmptyList.text()).toContain(listEmptyMessage);
+        expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
     })
 
     it('displays no message on an initially non-empty list of NewsItems', () => {
