@@ -75,10 +75,10 @@ export default {
   },
   computed: {
     sortedNewsListItems() {
-      let list = [...this.newsListItems].sort((a, b) => b.votes - a.votes);
-      return this.descendingOrder
-          ? list
-          : list.reverse();
+      const compareFn = this.descendingOrder
+          ? (a, b) => b.votes - a.votes
+          : (a, b) => a.votes - b.votes
+      return [...this.newsListItems].sort(compareFn);
     }
   },
 };
