@@ -4,19 +4,23 @@
     <div class="news-list-empty-message" v-if="!newsListItems.length">
       <span id="list-empty-message">{{ listEmptyMessage }}</span>
     </div>
-    <div
-        v-for="item in sortedNewsListItems"
-        :key="item.id">
-      <NewsListItem
-          :title="item.title"
-          :votes="item.votes"
-          @upvote="item.votes++"
-          @downvote="item.votes--"
-          @remove="removeNewsListItem(item.id)"
-      />
+    <div id="newslist">
+      <div
+          v-for="item in sortedNewsListItems"
+          :key="item.id">
+        <NewsListItem
+            class="newslistitem"
+            :title="item.title"
+            :votes="item.votes"
+            @upvote="item.votes++"
+            @downvote="item.votes--"
+            @remove="removeNewsListItem(item.id)"
+        />
+      </div>
     </div>
     <NewsListItemInput @create="createNewsListItem($event);"/>
-    <button type="button" @click="toggleOrder()" v-if="newsListItems.length" id="reverse-order-button">Reverse Order</button>
+    <button type="button" @click="toggleOrder()" v-if="newsListItems.length" id="reverse-order-button">Reverse Order
+    </button>
   </div>
 </template>
 

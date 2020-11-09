@@ -3,6 +3,59 @@ import App from "./App";
 import 'regenerator-runtime';
 import Vue from "vue";
 
+describe("News list", () => {
+    it('does not render any items on an initially empty list of NewsItems', () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                initialNewsListItems: []
+            }
+        });
+        expect(wrapper.find("#newslist").html()).toBe('<div id="newslist"></div>');
+        expect(wrapper.findAll(".newslistitem").length).toBe(0);
+    });
+
+    it('renders items on an initially filled list of NewsItems', () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                initialNewsListItems: [
+                    {id: 0, title: "macOS", votes: 0},
+                    {id: 1, title: "Linux", votes: 0},
+                    {id: 2, title: "Windows", votes: 0}
+                ]
+            }
+        });
+        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
+
+        expect(wrapper.findAll(".newslistitem").length).toBe(3);
+    });
+    it('renders items correctly dependent on mutations of the list of NewsItems', async () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                initialNewsListItems: [
+                    {id: 0, title: "macOS", votes: 0},
+                ]
+            }
+        });
+        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
+        expect(wrapper.findAll(".newslistitem").length).toBe(1);
+
+        wrapper.vm.removeNewsListItem(0);
+
+        await Vue.nextTick();
+
+        expect(wrapper.find("#newslist").html()).toBe('<div id="newslist"></div>');
+        expect(wrapper.findAll(".newslistitem").length).toBe(0);
+
+        wrapper.vm.createNewsListItem("Test");
+        wrapper.vm.createNewsListItem("Test2");
+
+        await Vue.nextTick();
+
+        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
+        expect(wrapper.findAll(".newslistitem").length).toBe(2);
+    });
+});
+
 describe("List Empty Message", () => {
     const listEmptyMessage = "Oh noes, the list is empty!";
 
@@ -14,7 +67,7 @@ describe("List Empty Message", () => {
             }
         });
         expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
-    })
+    });
 
     it('displays no message on an initially non-empty list of NewsItems', () => {
         const wrapper = shallowMount(App, {
@@ -41,14 +94,12 @@ describe("List Empty Message", () => {
 
         expect(wrapper.text()).toContain(listEmptyMessage);
 
-        // alternatively, call .vm.$emit
         wrapper.vm.createNewsListItem("Test")
 
         await Vue.nextTick();
 
         expect(wrapper.text()).not.toContain(listEmptyMessage);
 
-        // alternatively, call .vm.$emit
         wrapper.vm.removeNewsListItem(0);
 
         await Vue.nextTick();
@@ -72,6 +123,7 @@ describe("Reverse Order Button", () => {
         });
 
         let expectedIdList = [1, 0, 2, 3];
+        // or check HTML
         let actualIdList = wrapper.vm.sortedNewsListItems.map(x => x.id);
         expect(expectedIdList).toEqual(actualIdList);
 
