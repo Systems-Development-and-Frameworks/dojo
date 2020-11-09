@@ -177,7 +177,8 @@ describe("Reverse Order Button", () => {
             }
         });
 
-        expect(wrapperWithEmptyList.text()).not.toContain("Reverse Order");
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.hasAttribute("disabled")).toBeTruthy();
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.getAttribute("disabled")).toEqual("disabled");
     });
 
     it('Reverse-Button is hidden upon empty list', async () => {
@@ -190,14 +191,16 @@ describe("Reverse Order Button", () => {
                 ]
             }
         });
-        expect(wrapper.text()).toContain("Reverse Order");
+        expect(wrapper.find("#reverse-order-button").element.hasAttribute("disabled")).not.toBeTruthy();
+        expect(wrapper.find("#reverse-order-button").element.getAttribute("disabled")).not.toEqual("disabled");
 
         wrapper.vm.removeNewsListItem(0);
         wrapper.vm.removeNewsListItem(1);
         wrapper.vm.removeNewsListItem(2);
         await Vue.nextTick();
 
-        expect(wrapper.text()).not.toContain("Reverse Order");
+        expect(wrapper.find("#reverse-order-button").element.hasAttribute("disabled")).toBeTruthy();
+        expect(wrapper.find("#reverse-order-button").element.getAttribute("disabled")).toEqual("disabled");
     });
 
     it('Reverse-Button shows up again upon non-empty list', async () => {
@@ -206,11 +209,13 @@ describe("Reverse Order Button", () => {
                 initialNewsListItems: []
             }
         });
-        expect(wrapperWithEmptyList.text()).not.toContain("Reverse Order");
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.hasAttribute("disabled")).toBeTruthy();
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.getAttribute("disabled")).toEqual("disabled");
 
         wrapperWithEmptyList.vm.createNewsListItem("Test");
         await Vue.nextTick();
 
-        expect(wrapperWithEmptyList.text()).toContain("Reverse Order");
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.hasAttribute("disabled")).not.toBeTruthy();
+        expect(wrapperWithEmptyList.find("#reverse-order-button").element.getAttribute("disabled")).not.toEqual("disabled");
     });
 });
