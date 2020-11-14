@@ -12,7 +12,6 @@ describe("News list", () => {
             }
         });
         expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
-        expect(wrapper.findAll(".newslistitem")).toHaveLength(0);
     });
 
     it('renders items on an initially filled list of NewsItems', () => {
@@ -25,8 +24,6 @@ describe("News list", () => {
                 ]
             }
         });
-        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement()
-
         expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
     });
     it('renders items correctly dependent on mutations of the list of NewsItems', async () => {
@@ -37,14 +34,12 @@ describe("News list", () => {
                 ]
             }
         });
-        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement();
         expect(wrapper.findAll(".newslistitem")).toHaveLength(1);
 
         wrapper.vm.removeNewsListItem(0);
 
         await Vue.nextTick();
 
-        expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
         expect(wrapper.findAll(".newslistitem")).toHaveLength(0);
 
         wrapper.vm.createNewsListItem("Test");
@@ -52,7 +47,6 @@ describe("News list", () => {
 
         await Vue.nextTick();
 
-        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement();
         expect(wrapper.findAll(".newslistitem")).toHaveLength(2);
     });
 });
