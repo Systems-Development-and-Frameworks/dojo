@@ -1,4 +1,5 @@
 import {shallowMount} from '@vue/test-utils';
+import '@testing-library/jest-dom'
 import App from "./App";
 import 'regenerator-runtime';
 import Vue from "vue";
@@ -24,7 +25,7 @@ describe("News list", () => {
                 ]
             }
         });
-        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
+        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement()
 
         expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
     });
