@@ -173,7 +173,7 @@ describe("Reverse Order Button", () => {
         });
 
         expect(wrapperWithEmptyList.find("#reverse-order-button").element.hasAttribute("disabled")).toBeTruthy();
-        expect(wrapperWithEmptyList.find("#reverse-order-button").element.getAttribute("disabled")).toEqual("disabled");
+        expect(wrapperWithEmptyList.find("#reverse-order-button").attributes("disabled")).toEqual("disabled");
     });
 
     it('Reverse-Button is hidden upon empty list', async () => {
