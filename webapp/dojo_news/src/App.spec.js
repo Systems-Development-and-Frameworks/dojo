@@ -10,8 +10,8 @@ describe("News list", () => {
                 initialNewsListItems: []
             }
         });
-        expect(wrapper.find("#newslist").html()).toBe('<div id="newslist"></div>');
-        expect(wrapper.findAll(".newslistitem").length).toBe(0);
+        expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(0);
     });
 
     it('renders items on an initially filled list of NewsItems', () => {
@@ -26,7 +26,7 @@ describe("News list", () => {
         });
         expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
 
-        expect(wrapper.findAll(".newslistitem").length).toBe(3);
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
     });
     it('renders items correctly dependent on mutations of the list of NewsItems', async () => {
         const wrapper = shallowMount(App, {
@@ -36,23 +36,23 @@ describe("News list", () => {
                 ]
             }
         });
-        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
-        expect(wrapper.findAll(".newslistitem").length).toBe(1);
+        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement();
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(1);
 
         wrapper.vm.removeNewsListItem(0);
 
         await Vue.nextTick();
 
-        expect(wrapper.find("#newslist").html()).toBe('<div id="newslist"></div>');
-        expect(wrapper.findAll(".newslistitem").length).toBe(0);
+        expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(0);
 
         wrapper.vm.createNewsListItem("Test");
         wrapper.vm.createNewsListItem("Test2");
 
         await Vue.nextTick();
 
-        expect(wrapper.find("#newslist").html()).not.toBe('<div id="newslist"></div>');
-        expect(wrapper.findAll(".newslistitem").length).toBe(2);
+        expect(wrapper.find("#newslist").element).not.toBeEmptyDOMElement();
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(2);
     });
 });
 
