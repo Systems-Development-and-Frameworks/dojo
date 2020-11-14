@@ -19,7 +19,7 @@
       </div>
     </div>
     <NewsListItemInput @create="createNewsListItem($event);"/>
-    <button type="button" @click="toggleOrder()" :disabled="!newsListItems.length" id="reverse-order-button">Reverse Order
+    <button type="button" @click="toggleOrder" :disabled="!newsListItems.length" id="reverse-order-button">Reverse Order
     </button>
   </div>
 </template>
