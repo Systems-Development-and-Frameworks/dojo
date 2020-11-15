@@ -64,22 +64,18 @@ describe("News List", () => {
 });
 
 describe("List Empty Message", () => {
-    const listEmptyMessage = "Oh noes, the list is empty!";
-
     it('appears on an initially empty list of NewsItems', () => {
         const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
-                listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: []
             }
         });
-        expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
+        expect(wrapperWithEmptyList.text()).toContain("The list is empty :(");
     });
 
     it('doesn\'t appear on an initially non-empty list of NewsItems', () => {
         const wrapper = shallowMount(App, {
             propsData: {
-                listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: [
                     {id: 0, title: "macOS", votes: 0},
                     {id: 1, title: "Linux", votes: 0},
@@ -88,42 +84,40 @@ describe("List Empty Message", () => {
             }
         });
 
-        expect(wrapper.text()).not.toContain(listEmptyMessage);
+        expect(wrapper.text()).not.toContain("The list is empty :(");
     });
 
     it('is hidden upon non-empty list of NewsItems', async () => {
         const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
-                listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: []
             }
         });
-        expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
+        expect(wrapperWithEmptyList.text()).toContain("The list is empty :(");
 
         wrapperWithEmptyList.vm.createNewsListItem("Test")
 
         await Vue.nextTick();
 
-        expect(wrapperWithEmptyList.text()).not.toContain(listEmptyMessage);
+        expect(wrapperWithEmptyList.text()).not.toContain("The list is empty :(");
     });
 
     it('is shown upon empty list of NewsItems', async () => {
         const wrapper = shallowMount(App, {
             propsData: {
-                listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: [
                     {id: 0, title: "macOS", votes: 0}
                 ]
             }
         });
 
-        expect(wrapper.text()).not.toContain(listEmptyMessage);
+        expect(wrapper.text()).not.toContain("The list is empty :(");
 
         wrapper.vm.removeNewsListItem(0);
 
         await Vue.nextTick();
 
-        expect(wrapper.html()).toContain(listEmptyMessage);
+        expect(wrapper.html()).toContain("The list is empty :(");
     });
 });
 
