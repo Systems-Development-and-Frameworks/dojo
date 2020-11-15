@@ -5,16 +5,7 @@ import 'regenerator-runtime';
 import Vue from "vue";
 
 describe("News List", () => {
-    it('does not render any items on an initially empty list of NewsItems', () => {
-        const wrapper = shallowMount(App, {
-            propsData: {
-                initialNewsListItems: []
-            }
-        });
-        expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
-    });
-
-    it('renders items on an initially filled list of NewsItems', () => {
+    it('renders items, given initially set items', () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -25,6 +16,15 @@ describe("News List", () => {
             }
         });
         expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
+    });
+
+    it('doesn\'t render items, given an empty initial list of items, ', () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                initialNewsListItems: []
+            }
+        });
+        expect(wrapper.find("#newslist").element).toBeEmptyDOMElement();
     });
 
     it('renders items correctly upon removing a NewsItem', async () => {
@@ -66,7 +66,7 @@ describe("News List", () => {
 describe("List Empty Message", () => {
     const listEmptyMessage = "Oh noes, the list is empty!";
 
-    it('displays a message on an initially empty list of NewsItems', () => {
+    it('appears on an initially empty list of NewsItems', () => {
         const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
                 listEmptyMessage: listEmptyMessage,
@@ -76,7 +76,7 @@ describe("List Empty Message", () => {
         expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
     });
 
-    it('displays no message on an initially non-empty list of NewsItems', () => {
+    it('doesn\'t appear on an initially non-empty list of NewsItems', () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 listEmptyMessage: listEmptyMessage,
@@ -128,7 +128,7 @@ describe("List Empty Message", () => {
 });
 
 describe("Reverse Order Button", () => {
-    it('list order is reversed upon Reverse-Button click from initial state _descending_', async () => {
+    it('reverses list order upon click from initial state _descending_', async () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -152,7 +152,7 @@ describe("Reverse Order Button", () => {
         expect(expectedIdList).toEqual(actualIdList);
     });
 
-    it('list order is reversed upon Reverse-Button click from initial state _ascending_', async () => {
+    it('reverses list order upon click from initial state _ascending_', async () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -175,7 +175,7 @@ describe("Reverse Order Button", () => {
         expect(expectedIdList).toEqual(actualIdList);
     });
 
-    it('displays the Reverse-Order-Button on an initially non empty list of NewsItems', () => {
+    it('is not disabled on an initially non-empty list of NewsItems', () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -189,7 +189,7 @@ describe("Reverse Order Button", () => {
         expect(wrapper.find("#reverse-order-button").element.hasAttribute("disabled")).toBeFalsy();
     });
 
-    it('does not display the Reverse-Order-Button on an initially empty list of NewsItems', () => {
+    it('is disabled on an initially empty list of NewsItems', () => {
         const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
                 initialNewsListItems: []
@@ -200,7 +200,7 @@ describe("Reverse Order Button", () => {
         expect(wrapperWithEmptyList.find("#reverse-order-button").attributes("disabled")).toEqual("disabled");
     });
 
-    it('Reverse-Button is hidden upon empty list', async () => {
+    it('is hidden upon empty list', async () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -222,7 +222,7 @@ describe("Reverse Order Button", () => {
         expect(wrapper.find("#reverse-order-button").element.getAttribute("disabled")).toEqual("disabled");
     });
 
-    it('Reverse-Button shows up again upon non-empty list', async () => {
+    it('shows up again upon non-empty list', async () => {
         const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
                 initialNewsListItems: []
