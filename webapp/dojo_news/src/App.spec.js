@@ -174,7 +174,7 @@ describe("Reverse Order Button", () => {
             }
         });
 
-        expect(wrapper.text()).toContain("Reverse Order");
+        expect(wrapper.find("#reverse-order-button").element.hasAttribute("disabled")).toBeFalsy();
     });
 
     it('does not display the Reverse-Order-Button on an initially empty list of NewsItems', () => {
