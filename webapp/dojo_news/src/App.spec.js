@@ -91,19 +91,31 @@ describe("List Empty Message", () => {
         expect(wrapper.text()).not.toContain(listEmptyMessage);
     });
 
-    it('adds and removes the message on list mutations', async () => {
-        const wrapper = shallowMount(App, {
+    it('is hidden upon non-empty list of NewsItems', async () => {
+        const wrapperWithEmptyList = shallowMount(App, {
             propsData: {
                 listEmptyMessage: listEmptyMessage,
                 initialNewsListItems: []
             }
         });
+        expect(wrapperWithEmptyList.text()).toContain(listEmptyMessage);
 
-        expect(wrapper.text()).toContain(listEmptyMessage);
-
-        wrapper.vm.createNewsListItem("Test")
+        wrapperWithEmptyList.vm.createNewsListItem("Test")
 
         await Vue.nextTick();
+
+        expect(wrapperWithEmptyList.text()).not.toContain(listEmptyMessage);
+    });
+
+    it('is shown upon empty list of NewsItems', async () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                listEmptyMessage: listEmptyMessage,
+                initialNewsListItems: [
+                    {id: 0, title: "macOS", votes: 0}
+                ]
+            }
+        });
 
         expect(wrapper.text()).not.toContain(listEmptyMessage);
 
