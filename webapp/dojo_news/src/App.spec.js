@@ -4,7 +4,7 @@ import App from "./App";
 import 'regenerator-runtime';
 import Vue from "vue";
 
-describe("News list", () => {
+describe("News List", () => {
     it('does not render any items on an initially empty list of NewsItems', () => {
         const wrapper = shallowMount(App, {
             propsData: {
@@ -26,7 +26,8 @@ describe("News list", () => {
         });
         expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
     });
-    it('renders items correctly dependent on mutations of the list of NewsItems', async () => {
+
+    it('renders items correctly upon removing a NewsItem', async () => {
         const wrapper = shallowMount(App, {
             propsData: {
                 initialNewsListItems: [
@@ -41,13 +42,24 @@ describe("News list", () => {
         await Vue.nextTick();
 
         expect(wrapper.findAll(".newslistitem")).toHaveLength(0);
+    });
+
+    it('renders items correctly upon adding a NewsItem', async () => {
+        const wrapper = shallowMount(App, {
+            propsData: {
+                initialNewsListItems: [
+                    {id: 0, title: "macOS", votes: 0},
+                ]
+            }
+        });
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(1);
 
         wrapper.vm.createNewsListItem("Test");
         wrapper.vm.createNewsListItem("Test2");
 
         await Vue.nextTick();
 
-        expect(wrapper.findAll(".newslistitem")).toHaveLength(2);
+        expect(wrapper.findAll(".newslistitem")).toHaveLength(3);
     });
 });
 
