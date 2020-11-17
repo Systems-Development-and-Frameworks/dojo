@@ -1,5 +1,5 @@
 import {shallowMount} from '@vue/test-utils';
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom';
 import App from "./App";
 import 'regenerator-runtime';
 import Vue from "vue";
@@ -122,6 +122,12 @@ describe("List Empty Message", () => {
 });
 
 describe("Reverse Order Button", () => {
+    function getActualNewsListItems(wrapper) {
+        return wrapper.findAll(".newslistitem").wrappers
+            .map(w => (
+                {title: w.attributes("title"), votes: w.attributes("votes")}
+            ));
+    }
 
     it('reverses list order upon click from initial state _descending_', async () => {
         const wrapper = shallowMount(App, {
@@ -135,14 +141,30 @@ describe("Reverse Order Button", () => {
                 initialDescendingOrder: true
             }
         });
-        let expectedNewslistHTML = "<div><newslistitem-stub title=\"Linux\" votes=\"8\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"macOS\" votes=\"4\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"centOS\" votes=\"3\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"Windows\" votes=\"0\" class=\"newslistitem\"></newslistitem-stub></div>";
-        let actualNewslistHTML = wrapper.find("#newslist").element.innerHTML;
-        expect(actualNewslistHTML).toEqual(expectedNewslistHTML);
+        let expectedNewslistItems = [
+            {title: "Linux", votes: "8"},
+            {title: "macOS", votes: "4"},
+            {title: "centOS", votes: "3"},
+            {title: "Windows", votes: "0"}
+        ];
+        let actualNewsListItems = wrapper.findAll(".newslistitem").wrappers
+            .map(w => (
+                {title: w.attributes("title"), votes: w.attributes("votes")}
+            ));
+
+        expect(actualNewsListItems).toEqual(expectedNewslistItems);
 
         await wrapper.find("#reverse-order-button").trigger("click");
-        expectedNewslistHTML = "<div><newslistitem-stub title=\"Windows\" votes=\"0\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"centOS\" votes=\"3\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"macOS\" votes=\"4\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"Linux\" votes=\"8\" class=\"newslistitem\"></newslistitem-stub></div>";
-        actualNewslistHTML = wrapper.find("#newslist").element.innerHTML;
-        expect(actualNewslistHTML).toEqual(expectedNewslistHTML);
+
+        expectedNewslistItems = [
+            {title: "Windows", votes: "0"},
+            {title: "centOS", votes: "3"},
+            {title: "macOS", votes: "4"},
+            {title: "Linux", votes: "8"}
+        ];
+        actualNewsListItems = getActualNewsListItems(wrapper);
+
+        expect(actualNewsListItems).toEqual(expectedNewslistItems);
     });
 
     it('reverses list order upon click from initial state _ascending_', async () => {
@@ -157,14 +179,30 @@ describe("Reverse Order Button", () => {
                 initialDescendingOrder: false
             }
         });
-        let expectedNewslistHTML = "<div><newslistitem-stub title=\"Windows\" votes=\"0\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"centOS\" votes=\"3\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"macOS\" votes=\"4\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"Linux\" votes=\"8\" class=\"newslistitem\"></newslistitem-stub></div>";
-        let actualNewslistHTML = wrapper.find("#newslist").element.innerHTML;
-        expect(actualNewslistHTML).toEqual(expectedNewslistHTML);
+        let expectedNewslistItems = [
+            {title: "Windows", votes: "0"},
+            {title: "centOS", votes: "3"},
+            {title: "macOS", votes: "4"},
+            {title: "Linux", votes: "8"}
+        ];
+        let actualNewsListItems = wrapper.findAll(".newslistitem").wrappers
+            .map(w => (
+                {title: w.attributes("title"), votes: w.attributes("votes")}
+            ));
+
+        expect(actualNewsListItems).toEqual(expectedNewslistItems);
 
         await wrapper.find("#reverse-order-button").trigger("click");
-        expectedNewslistHTML = "<div><newslistitem-stub title=\"Linux\" votes=\"8\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"macOS\" votes=\"4\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"centOS\" votes=\"3\" class=\"newslistitem\"></newslistitem-stub></div><div><newslistitem-stub title=\"Windows\" votes=\"0\" class=\"newslistitem\"></newslistitem-stub></div>";
-        actualNewslistHTML = wrapper.find("#newslist").element.innerHTML;
-        expect(actualNewslistHTML).toEqual(expectedNewslistHTML);
+
+        expectedNewslistItems = [
+            {title: "Linux", votes: "8"},
+            {title: "macOS", votes: "4"},
+            {title: "centOS", votes: "3"},
+            {title: "Windows", votes: "0"}
+        ];
+        actualNewsListItems = getActualNewsListItems(wrapper);
+
+        expect(actualNewsListItems).toEqual(expectedNewslistItems);
     });
 
     it('is not disabled on an initially non-empty list of NewsItems', () => {
