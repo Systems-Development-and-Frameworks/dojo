@@ -237,6 +237,15 @@ describe('mutations', () => {
         })
     })
 
+    it('created posts in the DB with valid authors given', async () => {
+      db.createUser('Jonas')
+      expect(db.posts.size).toBe(0)
+      await createPostMutation('Some news', 'Jonas')
+      expect(db.posts.size).toBe(1)
+      await createPostMutation('Some other news', 'Jonas')
+      expect(db.posts.size).toBe(2)
+    })
+
     it('returns created posts with valid authors given', async () => {
       db.createUser('Jonas')
       db.createUser('Michelle')
@@ -307,6 +316,17 @@ describe('mutations', () => {
             deletePost: null
           }
         })
+    })
+
+    it('deletes posts in the DB with valid authors given', async () => {
+      db.createUser('Jonas')
+      db.createPost('Some news', 123, 'Jonas')
+      db.createPost('Some SAD FAKE news', 456, 'Jonas')
+      expect(db.posts.size).toBe(2)
+      await deletePostMutation(0)
+      expect(db.posts.size).toBe(1)
+      await deletePostMutation(1)
+      expect(db.posts.size).toBe(0)
     })
 
     it('returns properly deleted posts', async () => {
