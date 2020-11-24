@@ -429,4 +429,94 @@ describe('mutations', () => {
         })
     })
   })
+
+  describe('downvotePost', () => {
+    const downvotePostMutation = (id, voterName) => mutate({
+      mutation: gql`
+          mutation {
+              downvotePost(
+                  id: "${id}"
+                  voter: {
+                      name: "${voterName}"
+                  }
+              )
+          }`
+    })
+
+    it('calls downvotePost', async () => {
+      db.downvotePost = jest.fn(() => {
+      })
+      await downvotePostMutation(1234, 'Jonas')
+      expect(db.downvotePost).toHaveBeenNthCalledWith(1, '1234', 'Jonas')
+    })
+
+    it('returns an error if there\'s no post with the given ID', async () => {
+      db.createUser('Jonas')
+
+      await (expect(downvotePostMutation(0, 'Jonas')))
+        .resolves
+        .toMatchObject({
+          errors: [new GraphQLError('No post found for ID 0!')],
+          data: null
+        })
+    })
+
+    it('returns an error if there\'s no user with the given name', async () => {
+      db.createUser('TestUser')
+      db.createPost('Hot news', 99, 'TestUser')
+
+      await (expect(downvotePostMutation(0, 'Jonas')))
+        .resolves
+        .toMatchObject({
+          errors: [new GraphQLError('No user found with name Jonas!')],
+          data: null
+        })
+    })
+
+    it('returns proper vote counts for upvoted posts', async () => {
+      db.createUser('TestUser')
+      db.createUser('Michelle')
+      db.createPost('Hot news', -99, 'TestUser')
+      db.createPost('Hot new news', 99, 'TestUser')
+      db.upvotePost('1', 'Michelle') // 99 -> 100 votes
+
+      await expect(downvotePostMutation(0, 'Michelle'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            downvotePost: -100
+          }
+        })
+
+      // double downvote doesn't remove a vote
+      await expect(downvotePostMutation(0, 'Michelle'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            downvotePost: -100
+          }
+        })
+
+      await expect(downvotePostMutation(0, 'TestUser'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            downvotePost: -101
+          }
+        })
+
+      // downvote to upvote: -2 votes
+      await expect(downvotePostMutation(1, 'Michelle'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            downvotePost: 98
+          }
+        })
+    })
+  })
 })
