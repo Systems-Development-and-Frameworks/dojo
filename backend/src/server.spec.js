@@ -2,6 +2,7 @@ import { InMemoryNewsDS } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
+import { GraphQLError } from 'graphql'
 
 let db = new InMemoryNewsDS()
 beforeEach(() => {
@@ -9,7 +10,7 @@ beforeEach(() => {
 })
 const server = new NewsServer({ dataSources: () => ({ db }) })
 
-const { query } = createTestClient(server)
+const { query, mutate } = createTestClient(server)
 
 describe('queries', () => {
   describe('posts', () => {
@@ -192,6 +193,99 @@ describe('queries', () => {
             }
           })
       })
+    })
+  })
+})
+
+describe('mutations', () => {
+  describe('createPost', () => {
+    const createPostMutation = (title, author) => mutate({
+      mutation: gql`
+          mutation {
+              createPost(post: {
+                  title: "${title}"
+                  author: {
+                      name: "${author}"
+                  }
+              }) {
+                  title
+                  votes
+                  author {
+                      name
+                  }
+              }
+          }
+      `
+    })
+
+    it('calls createPost', async () => {
+      db.createPost = jest.fn(() => {
+      })
+      await createPostMutation('A nice test title', 'Jonas')
+      expect(db.createPost).toHaveBeenNthCalledWith(1, 'A nice test title', 0, 'Jonas')
+    })
+
+    it('returns an error if there\'s no author with the given name', async () => {
+      await expect(createPostMutation('Some title', 'Some author'))
+        .resolves
+        .toMatchObject({
+          // TODO: Get rid of hardcoded error message
+          errors: [new GraphQLError('User with name Some author does not exist!')],
+          data: {
+            createPost: null
+          }
+        })
+    })
+
+    it('returns created posts with valid authors given', async () => {
+      db.createUser('Jonas')
+      db.createUser('Michelle')
+
+      await expect(createPostMutation('A nice test title', 'Jonas'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            createPost: {
+              title: 'A nice test title',
+              votes: 0,
+              author: {
+                name: 'Jonas'
+              }
+            }
+          }
+        })
+
+      // Allow reposts
+      await expect(createPostMutation('A nice test title', 'Jonas'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            createPost: {
+              title: 'A nice test title',
+              votes: 0,
+              author: {
+                name: 'Jonas'
+              }
+            }
+          }
+        })
+
+      await expect(createPostMutation('New news', 'Michelle'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            createPost: {
+              title: 'New news',
+              votes: 0,
+              author: {
+                name: 'Michelle'
+              }
+            }
+          }
+        })
     })
   })
 })
