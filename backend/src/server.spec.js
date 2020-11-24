@@ -256,22 +256,6 @@ describe('mutations', () => {
           }
         })
 
-      // Allow reposts
-      await expect(createPostMutation('A nice test title', 'Jonas'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            createPost: {
-              title: 'A nice test title',
-              votes: 0,
-              author: {
-                name: 'Jonas'
-              }
-            }
-          }
-        })
-
       await expect(createPostMutation('New news', 'Michelle'))
         .resolves
         .toMatchObject({
@@ -284,6 +268,73 @@ describe('mutations', () => {
                 name: 'Michelle'
               }
             }
+          }
+        })
+    })
+  })
+
+  describe('deletePost', () => {
+    const deletePostMutation = (id) => mutate({
+      mutation: gql`
+          mutation {
+              deletePost(id: "${id}") {
+                  title
+                  votes
+                  author {
+                      name
+                      posts {
+                          title
+                          votes
+                      }
+                  }
+              }
+          }`
+    })
+
+    it('calls deletePost', async () => {
+      db.deletePost = jest.fn(() => {
+      })
+      await deletePostMutation(1234)
+      expect(db.deletePost).toHaveBeenNthCalledWith(1, '1234')
+    })
+
+    it('returns an error if there\'s no post with the given ID', async () => {
+      await (expect(deletePostMutation(0)))
+        .resolves
+        .toMatchObject({
+          errors: [new GraphQLError('No post found for ID 0!')],
+          data: {
+            deletePost: null
+          }
+        })
+    })
+
+    it('returns properly deleted posts', async () => {
+      db.createUser('TestUser')
+      db.createPost('Hot news', 99, 'TestUser')
+
+      await expect(deletePostMutation(0))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            deletePost: {
+              title: 'Hot news',
+              votes: 99,
+              author: {
+                name: 'TestUser',
+                posts: []
+              }
+            }
+          }
+        })
+
+      await (expect(deletePostMutation(0)))
+        .resolves
+        .toMatchObject({
+          errors: [new GraphQLError('No post found for ID 0!')],
+          data: {
+            deletePost: null
           }
         })
     })
