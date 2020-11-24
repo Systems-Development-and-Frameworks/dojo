@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ main, exercise3 ]
 
+defaults:
+  run:
+    working-directory: ./webapp
+
 jobs:
   build-test-lint:
 
@@ -16,7 +20,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [ 14.x ]
 
     steps:
       - uses: actions/checkout@v2
@@ -26,15 +30,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - run: npm ci
-        working-directory: ./webapp
       - run: npm run lint
-        working-directory: ./webapp
       - run: npm run test:unit
-        working-directory: ./webapp
-
-      - run: npm ci
-        working-directory: ./backend
-      - run: npm run lint
-        working-directory: ./backend
-      - run: npm run test
-        working-directory: ./backend
