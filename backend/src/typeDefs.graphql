@@ -1,0 +1,32 @@
+type Query {
+    posts: [Post!]!
+    users: [User!]!
+}
+
+type Mutation {
+    createPost(post: PostInput!): Post
+    deletePost(id: ID!): Post
+    upvotePost(id: ID!, voter: UserInput!): Int!
+    downvotePost(id: ID!, voter: UserInput!): Int!
+}
+
+type Post {
+    id: ID!
+    title: String!
+    votes: Int!
+    author: User!
+}
+
+type User {
+    name: ID!
+    posts: [Post!]!
+}
+
+input PostInput {
+    title: String!
+    author: UserInput!
+}
+
+input UserInput {
+    name: String!
+}
