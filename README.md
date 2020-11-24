@@ -8,6 +8,7 @@ In [`./exercises`](exercises) you'll find the exercises, in [`./webapp`](webapp)
 ## Setup and run the webapp
 
 All commands assume you're located in the `webapp` directory.
+
 ### Project setup
 ```
 $ (webapp) npm install
@@ -28,10 +29,35 @@ $ (webapp) npm run serve
 $ (webapp) npm run build
 ```
 
-### Lints and fixes files
+### Run linter
 ```
 $ (webapp) npm run lint
 ```
+
+## Setup and run the backend
+
+All commands assume you're located in the `backend` directory.
+
+### Project setup
+```
+$ (backend) npm install
+```
+
+### Run tests
+```
+$ (backend) npm run test
+```
+
+### Compiles and hot-reloads for development
+```
+$ (backend) npm run dev
+```
+
+### Run linter
+```
+$ (backend) npm run lint
+```
+
 
 <hr> 
 
