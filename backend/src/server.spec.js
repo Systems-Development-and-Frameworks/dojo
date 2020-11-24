@@ -2,7 +2,6 @@ import { InMemoryNewsDS } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
-import { GraphQLError } from 'graphql'
 
 let db = new InMemoryNewsDS()
 beforeEach(() => {
@@ -226,15 +225,13 @@ describe('mutations', () => {
     })
 
     it('returns an error if there\'s no author with the given name', async () => {
-      await expect(createPostMutation('Some title', 'Some author'))
-        .resolves
-        .toMatchObject({
-          // TODO: Get rid of hardcoded error message
-          errors: [new GraphQLError('User with name Some author does not exist!')],
-          data: {
-            createPost: null
-          }
-        })
+      const {
+        data,
+        errors: [error]
+      } = await createPostMutation('Some title', 'Some author')
+
+      expect(data).toMatchObject({ createPost: null })
+      expect(error.message).toEqual('User with name Some author does not exist!')
     })
 
     it('created posts in the DB with valid authors given', async () => {
@@ -308,14 +305,12 @@ describe('mutations', () => {
     })
 
     it('returns an error if there\'s no post with the given ID', async () => {
-      await (expect(deletePostMutation(0)))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No post found for ID 0!')],
-          data: {
-            deletePost: null
-          }
-        })
+      const {
+        data,
+        errors: [error]
+      } = await deletePostMutation(0)
+      expect(data).toMatchObject({ deletePost: null })
+      expect(error.message).toEqual('No post found for ID 0!')
     })
 
     it('deletes posts in the DB with valid authors given', async () => {
@@ -349,14 +344,12 @@ describe('mutations', () => {
           }
         })
 
-      await (expect(deletePostMutation(0)))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No post found for ID 0!')],
-          data: {
-            deletePost: null
-          }
-        })
+      const {
+        data,
+        errors: [error]
+      } = await deletePostMutation(0)
+      expect(data).toMatchObject({ deletePost: null })
+      expect(error.message).toEqual('No post found for ID 0!')
     })
   })
 
@@ -383,24 +376,24 @@ describe('mutations', () => {
     it('returns an error if there\'s no post with the given ID', async () => {
       db.createUser('Jonas')
 
-      await (expect(upvotePostMutation(0, 'Jonas')))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No post found for ID 0!')],
-          data: null
-        })
+      const {
+        data,
+        errors: [error]
+      } = await upvotePostMutation(0, 'Jonas')
+      expect(data).toBeNull()
+      expect(error.message).toEqual('No post found for ID 0!')
     })
 
     it('returns an error if there\'s no user with the given name', async () => {
       db.createUser('TestUser')
       db.createPost('Hot news', 99, 'TestUser')
 
-      await (expect(upvotePostMutation(0, 'Jonas')))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No user found with name Jonas!')],
-          data: null
-        })
+      const {
+        data,
+        errors: [error]
+      } = await upvotePostMutation(0, 'Jonas')
+      expect(data).toBeNull()
+      expect(error.message).toEqual('No user found with name Jonas!')
     })
 
     it('returns proper vote counts for upvoted posts', async () => {
@@ -473,24 +466,24 @@ describe('mutations', () => {
     it('returns an error if there\'s no post with the given ID', async () => {
       db.createUser('Jonas')
 
-      await (expect(downvotePostMutation(0, 'Jonas')))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No post found for ID 0!')],
-          data: null
-        })
+      const {
+        data,
+        errors: [error]
+      } = await downvotePostMutation(0, 'Jonas')
+      expect(data).toBeNull()
+      expect(error.message).toEqual('No post found for ID 0!')
     })
 
     it('returns an error if there\'s no user with the given name', async () => {
       db.createUser('TestUser')
       db.createPost('Hot news', 99, 'TestUser')
 
-      await (expect(downvotePostMutation(0, 'Jonas')))
-        .resolves
-        .toMatchObject({
-          errors: [new GraphQLError('No user found with name Jonas!')],
-          data: null
-        })
+      const {
+        data,
+        errors: [error]
+      } = await downvotePostMutation(0, 'Jonas')
+      expect(data).toBeNull()
+      expect(error.message).toEqual('No user found with name Jonas!')
     })
 
     it('returns proper vote counts for upvoted posts', async () => {
