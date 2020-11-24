@@ -5,13 +5,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [ main, exercise2 ]
+    branches: [ main, exercise3 ]
   pull_request:
-    branches: [ main, exercise2 ]
-
-defaults:
-  run:
-    working-directory: ./webapp/dojo_news
+    branches: [ main, exercise3 ]
 
 jobs:
   build-test-lint:
@@ -28,6 +24,15 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
       - run: npm ci
-      - run: npm run test:unit
+        working-directory: ./webapp
       - run: npm run lint
+        working-directory: ./webapp
+      - run: npm run test:unit
+        working-directory: ./webapp
+
+      - run: npm ci
+        working-directory: ./backend
+      - run: npm run lint
+        working-directory: ./backend
