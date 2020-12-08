@@ -4,6 +4,7 @@ import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
 import bcrypt from 'bcrypt'
 import { NotAuthorisedError } from './authorisation'
+import { DeletionOfOtherUsersPostForbiddenError } from './resolvers'
 
 let db = null
 const context = {
@@ -387,7 +388,7 @@ describe('mutations', () => {
             errors: [error]
           } = await deletePostMutation(0)
           expect(data).toBeNull()
-          expect(error.message).toEqual('May not delete a post of another user!')
+          expect(error.message).toEqual(new DeletionOfOtherUsersPostForbiddenError().message)
         })
       })
 

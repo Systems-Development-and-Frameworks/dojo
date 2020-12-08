@@ -4,6 +4,24 @@ import { PostIdNotFoundError } from './db'
 
 const bcryptSaltRounds = 10
 
+export class DeletionOfOtherUsersPostForbiddenError extends ForbiddenError {
+  constructor () {
+    super('May not delete a post of another user!')
+  }
+}
+
+export class TooShortPasswordError extends UserInputError {
+  constructor () {
+    super('Password must be at least 8 characters long!')
+  }
+}
+
+export class InvalidPasswordError extends UserInputError {
+  constructor () {
+    super('Invalid password provided!')
+  }
+}
+
 const resolvers = {
   Query: {
     posts: (_, __, { dataSources }) => dataSources.db.getPosts(),
@@ -19,7 +37,7 @@ const resolvers = {
         if (error instanceof PostIdNotFoundError) return error
         throw error
       }
-      if (post.author.id !== userId) return new ForbiddenError('May not delete a post of another user!')
+      if (post.author.id !== userId) return new DeletionOfOtherUsersPostForbiddenError()
       return dataSources.db.deletePost(id)
     },
     upvotePost: (_, { id }, { dataSources, userId }) => {
@@ -39,7 +57,7 @@ const resolvers = {
       }
     },
     signup: (_, { name, email, password }, { dataSources, getUserAuthenticationToken }) => {
-      if (password.length < 8) return new UserInputError('Password must be at least 8 characters long!')
+      if (password.length < 8) return new TooShortPasswordError()
       return bcrypt.hash(password, bcryptSaltRounds)
         .then((passwordHash) => getUserAuthenticationToken(dataSources.db.createUser(name, email, passwordHash)))
     },
@@ -48,7 +66,7 @@ const resolvers = {
       return bcrypt.compare(password, user.passwordHash)
         .then((isEqual) => isEqual
           ? getUserAuthenticationToken(user.id)
-          : new UserInputError('Invalid password provided!'))
+          : new InvalidPasswordError())
     }
   }
 }
