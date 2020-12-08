@@ -22,7 +22,11 @@ const permissions = shield({
     users: isAuthenticated
   },
   Mutation: {
-    '*': isAuthenticated,
+    '*': deny,
+    createPost: isAuthenticated,
+    deletePost: isAuthenticated,
+    upvotePost: isAuthenticated,
+    downvotePost: isAuthenticated,
     login: allow,
     signup: allow
   }
