@@ -71,11 +71,12 @@ describe('queries', () => {
 
     describe('given posts in the DB', () => {
       it('returns posts in the expected format', async () => {
-        db.createUser('Jonas', 'secretPassword')
-        db.createUser('Michelle', 'otherPassword')
-        db.createPost('This is a post!', 42, 0)
-        db.createPost('This is another post!', 1337, 0)
-        db.createPost('This is yet another post!', 1234, 1)
+        const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
+
+        db.createPost('This is a post!', 42, jonasId)
+        db.createPost('This is another post!', 1337, jonasId)
+        db.createPost('This is yet another post!', 1234, michellesId)
 
         await expect(postsQuery())
           .resolves
