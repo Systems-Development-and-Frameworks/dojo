@@ -1,4 +1,4 @@
-import { InMemoryNewsDS } from './db'
+import { InMemoryNewsDS, PostIdNotFoundError } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
@@ -263,7 +263,7 @@ describe('mutations', () => {
           errors: [error]
         } = await createPostMutation('A nice test title')
 
-        expect(data).toEqual(null)
+        expect(data).toBeNull()
         expect(error.message).toEqual('Not Authorised!')
       })
     })
@@ -369,7 +369,7 @@ describe('mutations', () => {
           errors: [error]
         } = await deletePostMutation(0)
         expect(data).toBeNull()
-        expect(error.message).toEqual('No post found for ID 0!')
+        expect(error.message).toEqual(new PostIdNotFoundError(0).message)
       })
 
       describe('if the inferred userId is not the author of the post to delete', () => {
@@ -447,7 +447,7 @@ describe('mutations', () => {
   })
 
   describe('upvotePost', () => {
-    const upvotePostMutation = (id, voterName) => mutate({
+    const upvotePostMutation = (id) => mutate({
       mutation: gql`
           mutation {
               upvotePost(
@@ -460,80 +460,110 @@ describe('mutations', () => {
           }`
     })
 
-    it('calls upvotePost', async () => {
-      db.upvotePost = jest.fn(() => {
+    describe('for unauthenticated users', () => {
+      it('does not call upvotePost', async () => {
+        db.upvotePost = jest.fn(() => {
+        })
+        await upvotePostMutation(0)
+        expect(db.upvotePost).toHaveBeenCalledTimes(0)
       })
-      await upvotePostMutation(1234, 'Jonas')
-      expect(db.upvotePost).toHaveBeenNthCalledWith(1, '1234', 'Jonas')
+
+      it('returns an error', async () => {
+        const {
+          data,
+          errors: [error]
+        } = await upvotePostMutation(0)
+
+        expect(data).toBeNull()
+        expect(error.message).toEqual('Not Authorised!')
+      })
     })
 
-    it('returns an error if there\'s no post with the given ID', async () => {
-      db.createUser('Jonas')
-
-      const {
-        data,
-        errors: [error]
-      } = await upvotePostMutation(0, 'Jonas')
-      expect(data).toBeNull()
-      expect(error.message).toEqual('No post found for ID 0!')
-    })
-
-    it('returns an error if there\'s no user with the given name', async () => {
-      db.createUser('TestUser')
-      db.createPost('Hot news', 99, 'TestUser')
-
-      const {
-        data,
-        errors: [error]
-      } = await upvotePostMutation(0, 'Jonas')
-      expect(data).toBeNull()
-      expect(error.message).toEqual('No user found with name Jonas!')
-    })
-
-    it('returns proper vote counts for upvoted posts', async () => {
-      db.createUser('TestUser')
-      db.createUser('Michelle')
-      db.createPost('Hot news', -99, 'TestUser')
-      db.createPost('Hot new news', 99, 'TestUser')
-      db.downvotePost('1', 'Michelle') // 99 -> 98 votes
-
-      await expect(upvotePostMutation(0, 'Michelle'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            upvotePost: -98
-          }
+    describe('for authenticated users', () => {
+      it('calls upvotePost', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        db.upvotePost = jest.fn(() => {
         })
+        await upvotePostMutation(1234)
+        expect(db.upvotePost).toHaveBeenNthCalledWith(1, '1234', context.userId)
+      })
 
-      // double upvote doesn't add a vote
-      await expect(upvotePostMutation(0, 'Michelle'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            upvotePost: -98
-          }
-        })
+      it('returns an error if there\'s no post with the given ID', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
 
-      await expect(upvotePostMutation(0, 'TestUser'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            upvotePost: -97
-          }
-        })
+        const {
+          data,
+          errors: [error]
+        } = await upvotePostMutation(0)
+        expect(data).toBeNull()
+        expect(error.message).toEqual(new PostIdNotFoundError(0).message)
+      })
 
-      // downvote to upvote: +2 votes
-      await expect(upvotePostMutation(1, 'Michelle'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            upvotePost: 100
-          }
-        })
+      it('returns proper vote counts for upvoted posts', async () => {
+        const testId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
+
+        db.createPost('Hot news', -99, testId)
+        db.createPost('Hot new news', 99, testId)
+        db.downvotePost('1', michellesId) // 99 -> 98 votes
+
+        context.userId = michellesId
+        await expect(upvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              upvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -98
+              }
+            }
+          })
+
+        // double upvote doesn't add a vote
+        await expect(upvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              upvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -98
+              }
+            }
+          })
+
+        context.userId = testId
+        await expect(upvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              upvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -97
+              }
+            }
+          })
+
+        context.userId = michellesId
+        // downvote to upvote: +2 votes
+        await expect(upvotePostMutation(1))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              upvotePost: {
+                id: '1',
+                title: 'Hot new news',
+                votes: 100
+              }
+            }
+          })
+      })
     })
   })
 

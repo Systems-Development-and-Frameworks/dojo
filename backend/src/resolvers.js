@@ -22,8 +22,22 @@ const resolvers = {
       if (post.author.id !== userId) return new ForbiddenError('May not delete a post of another user!')
       return dataSources.db.deletePost(id)
     },
-    upvotePost: (_, { id }, { dataSources, userId }) => dataSources.db.upvotePost(id, userId),
-    downvotePost: (_, { id }, { dataSources, userId }) => dataSources.db.downvotePost(id, userId),
+    upvotePost: (_, { id }, { dataSources, userId }) => {
+      try {
+        return dataSources.db.upvotePost(id, userId)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+    },
+    downvotePost: (_, { id }, { dataSources, userId }) => {
+      try {
+        return dataSources.db.downvotePost(id, userId)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+    },
     signup: (_, { name, email, password }, { dataSources, getUserAuthenticationToken }) => {
       if (password.length < 8) return new UserInputError('Password must be at least 8 characters long!')
       return bcrypt.hash(password, bcryptSaltRounds)
