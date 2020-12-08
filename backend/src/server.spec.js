@@ -1,24 +1,24 @@
-import { InMemoryNewsDS, PostIdNotFoundError } from './db'
+import { EmailAlreadyExistsError, InMemoryNewsDS, PostIdNotFoundError } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
 import bcrypt from 'bcrypt'
 import { NotAuthorisedError } from './authorisation'
-import { DeletionOfOtherUsersPostForbiddenError } from './resolvers'
-
-let db = null
-const context = {
-  getUserAuthenticationToken: null,
-  userId: 0
-}
+import { DeletionOfOtherUsersPostForbiddenError, TooShortPasswordError } from './resolvers'
 
 function hashPassword (password) {
   return bcrypt.hashSync(password, 1)
 }
 
+let db = null
 beforeEach(() => {
   db = new InMemoryNewsDS()
 })
+
+const context = {
+  getUserAuthenticationToken: null,
+  userId: 0
+}
 
 const server = new NewsServer({
   dataSources: () => ({ db }),
@@ -692,6 +692,72 @@ describe('mutations', () => {
             }
           })
       })
+    })
+  })
+
+  describe('signup', () => {
+    const signupMutation = (name, email, password) => mutate({
+      mutation: gql`
+          mutation {
+              signup(
+                  name: "${name}"
+                  email: "${email}"
+                  password: "${password}"
+              )
+          }`
+    })
+
+    it('disallows password of length under 8 characters', async () => {
+      for (const password of ['s', 'om', 'e u', 'nacc', 'eptab', 'le pas', 'swords!']) {
+        const {
+          data,
+          errors: [error]
+        } = await signupMutation('TestUser', 't@t.de', password)
+
+        expect(data).toBeNull()
+        expect(error.message).toBe(new TooShortPasswordError().message)
+      }
+    })
+
+    it('calls createUser', async () => {
+      db.createUser = jest.fn(() => [])
+      await (signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+      expect(db.createUser).toHaveBeenNthCalledWith(1, 'TestUser', 't@t.de', expect.stringMatching(/.+/))
+    })
+
+    it('does not store the password as-is in the DB', async () => {
+      await (signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+      expect(db.getUsers()[0].password).not.toBe('someLongEnoughPassword')
+    })
+
+    it('returns a token on successful signup', async () => {
+      context.getUserAuthenticationToken = 'someToken'
+
+      await expect(signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            signup: 'someToken'
+          }
+        })
+    })
+
+    it('disallows signing up with an already signed-up email', async () => {
+      context.getUserAuthenticationToken = 'someToken'
+
+      await expect(signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+        .resolves
+        .toMatchObject({
+          errors: undefined
+        })
+
+      const {
+        data,
+        errors: [error]
+      } = await signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword')
+      expect(data).toBeNull()
+      expect(error.message).toBe(new EmailAlreadyExistsError().message)
     })
   })
 })

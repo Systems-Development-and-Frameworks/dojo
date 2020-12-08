@@ -1,6 +1,6 @@
 import { ForbiddenError, UserInputError } from 'apollo-server-errors'
 import bcrypt from 'bcrypt'
-import { PostIdNotFoundError } from './db'
+import { EmailAlreadyExistsError, PostIdNotFoundError } from './db'
 
 const bcryptSaltRounds = 10
 
@@ -61,6 +61,7 @@ const resolvers = {
     },
     signup: (_, { name, email, password }, { dataSources, getUserAuthenticationToken }) => {
       if (password.length < 8) return new TooShortPasswordError()
+      if (dataSources.db.hasUserWithEmail(email)) return new EmailAlreadyExistsError()
       return bcrypt.hash(password, bcryptSaltRounds)
         .then((passwordHash) => getUserAuthenticationToken(dataSources.db.createUser(name, email, passwordHash)))
     },
