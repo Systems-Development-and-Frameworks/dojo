@@ -1,5 +1,11 @@
 import { allow, rule, shield } from 'graphql-shield'
 
+export class NotAuthorisedError extends Error {
+  constructor () {
+    super('Not authorised!')
+  }
+}
+
 const isAuthenticated = rule({ cache: 'contextual' })(
   async (_, __, {
     userId,
@@ -22,6 +28,8 @@ const permissions = shield({
     login: allow,
     signup: allow
   }
+}, {
+  fallbackError: new NotAuthorisedError()
 })
 
 export default permissions

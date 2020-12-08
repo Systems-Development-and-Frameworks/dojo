@@ -3,6 +3,7 @@ import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
 import bcrypt from 'bcrypt'
+import { NotAuthorisedError } from './authorisation'
 
 let db = null
 const context = {
@@ -172,7 +173,7 @@ describe('queries', () => {
         } = await usersQuery()
 
         expect(data).toBeNull()
-        expect(error.message).toEqual('Not Authorised!')
+        expect(error.message).toEqual(new NotAuthorisedError().message)
       })
     })
 
@@ -264,7 +265,7 @@ describe('mutations', () => {
         } = await createPostMutation('A nice test title')
 
         expect(data).toBeNull()
-        expect(error.message).toEqual('Not Authorised!')
+        expect(error.message).toEqual(new NotAuthorisedError().message)
       })
     })
 
@@ -357,7 +358,7 @@ describe('mutations', () => {
         } = await deletePostMutation(0)
 
         expect(data).toEqual(null)
-        expect(error.message).toEqual('Not Authorised!')
+        expect(error.message).toEqual(new NotAuthorisedError().message)
       })
     })
 
@@ -475,7 +476,7 @@ describe('mutations', () => {
         } = await upvotePostMutation(0)
 
         expect(data).toBeNull()
-        expect(error.message).toEqual('Not Authorised!')
+        expect(error.message).toEqual(new NotAuthorisedError().message)
       })
     })
 
@@ -596,7 +597,7 @@ describe('mutations', () => {
         } = await downvotePostMutation(0)
 
         expect(data).toBeNull()
-        expect(error.message).toEqual('Not Authorised!')
+        expect(error.message).toEqual(new NotAuthorisedError().message)
       })
     })
 
