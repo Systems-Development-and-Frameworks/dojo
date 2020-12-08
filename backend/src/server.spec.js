@@ -148,7 +148,9 @@ describe('queries', () => {
       query: gql`
           query {
               users {
+                  id
                   name
+                  email
                   posts {
                       id
                       author {
@@ -204,7 +206,9 @@ describe('queries', () => {
               data: {
                 users: [
                   {
+                    id: '0',
                     name: 'Jonas',
+                    email: 'j@j.de',
                     posts: [
                       {
                         id: '0',
@@ -217,7 +221,9 @@ describe('queries', () => {
                     ]
                   },
                   {
+                    id: '1',
                     name: 'Michelle',
+                    email: '',
                     posts: [
                       {
                         id: '2',

@@ -25,7 +25,10 @@ export class InvalidPasswordError extends UserInputError {
 const resolvers = {
   Query: {
     posts: (_, __, { dataSources }) => dataSources.db.getPosts(),
-    users: (_, __, { dataSources }) => dataSources.db.getUsers()
+    users: (_, __, { dataSources, userId }) => {
+      return dataSources.db.getUsers()
+        .map((user) => user.id === userId ? user : { ...user, email: '' })
+    }
   },
   Mutation: {
     createPost: (_, { post }, { dataSources, userId }) => dataSources.db.createPost(post.title, 0, userId),
