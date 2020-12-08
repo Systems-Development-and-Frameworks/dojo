@@ -165,7 +165,7 @@ describe('queries', () => {
         expect(db.getUsers).toHaveBeenCalledTimes(0)
       })
 
-      it('returns empty array on empty DB', async () => {
+      it('returns an error', async () => {
         const {
           data,
           errors: [error]
