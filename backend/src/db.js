@@ -2,6 +2,30 @@ import { DataSource } from 'apollo-datasource'
 import { Post } from './models/Post'
 import { User } from './models/User'
 
+export class EmailAlreadyExistsError extends Error {
+  constructor (email) {
+    super(`User with email ${email} already exists!`)
+  }
+}
+
+export class UserIdNotFoundError extends Error {
+  constructor (id) {
+    super(`No user found for ID ${id}!`)
+  }
+}
+
+export class UserEmailNotFoundError extends Error {
+  constructor (email) {
+    super(`No user with email ${email} found!`)
+  }
+}
+
+export class PostIdNotFoundError extends Error {
+  constructor (id) {
+    super(`No post found for ID ${id}!`)
+  }
+}
+
 export class InMemoryNewsDS extends DataSource {
   constructor () {
     super()
@@ -13,7 +37,7 @@ export class InMemoryNewsDS extends DataSource {
 
   createUser (name, email, passwordHash) {
     if (this.hasUserWithEmail(email)) {
-      throw new Error(`User with email ${email} already exists!`)
+      throw new EmailAlreadyExistsError(email)
     }
     const userId = String(this.nextUserId++)
     this.users.set(userId, new User(userId, name, email, passwordHash))
@@ -26,7 +50,7 @@ export class InMemoryNewsDS extends DataSource {
 
   getUser (id) {
     const user = this.users.get(id)
-    if (user === undefined) throw new Error(`No user found for ID ${id}!`)
+    if (user === undefined) throw new UserIdNotFoundError(id)
     return user
   }
 
@@ -36,13 +60,13 @@ export class InMemoryNewsDS extends DataSource {
 
   getUserByEmail (email) {
     const user = [...this.users.values()].find(user => user.email === email)
-    if (user === undefined) throw new Error(`No user with email ${email} found!`)
+    if (user === undefined) throw new UserEmailNotFoundError(email)
     return user
   }
 
   createPost (title, votes, authorId) {
     const author = this.users.get(authorId)
-    if (author === undefined) throw new Error(`User with ID ${authorId} does not exist!`)
+    if (author === undefined) throw new UserIdNotFoundError(authorId)
     const post = new Post(String(this.nextPostId++), title, votes, author)
     this.posts.set(post.id, post)
     this.users.get(authorId).posts.add(post)
@@ -51,7 +75,7 @@ export class InMemoryNewsDS extends DataSource {
 
   getPost (id) {
     const post = this.posts.get(id)
-    if (post === undefined) throw new Error(`No post found for ID ${id}!`)
+    if (post === undefined) throw new PostIdNotFoundError(id)
     return post
   }
 

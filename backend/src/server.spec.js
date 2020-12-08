@@ -171,7 +171,7 @@ describe('queries', () => {
           errors: [error]
         } = await usersQuery()
 
-        expect(data).toEqual(null)
+        expect(data).toBeNull()
         expect(error.message).toEqual('Not Authorised!')
       })
     })
@@ -249,66 +249,79 @@ describe('mutations', () => {
           }
       `
     })
-
-    it('calls createPost', async () => {
-      db.createPost = jest.fn(() => {
+    describe('for unauthenticated users', () => {
+      it('does not call createPost', async () => {
+        db.createPost = jest.fn(() => {
+        })
+        await createPostMutation('A nice test title')
+        expect(db.createPost).toHaveBeenCalledTimes(0)
       })
-      await createPostMutation('A nice test title', 'Jonas')
-      expect(db.createPost).toHaveBeenNthCalledWith(1, 'A nice test title', 0, 'Jonas')
+
+      it('returns an error', async () => {
+        const {
+          data,
+          errors: [error]
+        } = await createPostMutation('A nice test title')
+
+        expect(data).toEqual(null)
+        expect(error.message).toEqual('Not Authorised!')
+      })
     })
 
-    it('returns an error if there\'s no author with the given name', async () => {
-      const {
-        data,
-        errors: [error]
-      } = await createPostMutation('Some title', 'Some author')
+    describe('for authenticated users', () => {
+      it('calls createPost and derives the userId from the context', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        db.createPost = jest.fn(() => {
+        })
+        await createPostMutation('A nice test title', context.userId)
+        expect(db.createPost).toHaveBeenNthCalledWith(1, 'A nice test title', 0, context.userId)
+      })
 
-      expect(data).toMatchObject({ createPost: null })
-      expect(error.message).toEqual('User with name Some author does not exist!')
-    })
+      it('created posts in the DB with author inferred from the context', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        expect(db.posts.size).toBe(0)
+        await createPostMutation('Some news')
+        expect(db.posts.size).toBe(1)
+        await createPostMutation('Some other news')
+        expect(db.posts.size).toBe(2)
+      })
 
-    it('created posts in the DB with valid authors given', async () => {
-      db.createUser('Jonas')
-      expect(db.posts.size).toBe(0)
-      await createPostMutation('Some news', 'Jonas')
-      expect(db.posts.size).toBe(1)
-      await createPostMutation('Some other news', 'Jonas')
-      expect(db.posts.size).toBe(2)
-    })
+      it('returns created posts with valid authors inferred from the context', async () => {
+        const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        const michelleId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
 
-    it('returns created posts with valid authors given', async () => {
-      db.createUser('Jonas')
-      db.createUser('Michelle')
-
-      await expect(createPostMutation('A nice test title', 'Jonas'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            createPost: {
-              title: 'A nice test title',
-              votes: 0,
-              author: {
-                name: 'Jonas'
+        context.userId = jonasId
+        await expect(createPostMutation('A nice test title'))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              createPost: {
+                title: 'A nice test title',
+                votes: 0,
+                author: {
+                  name: 'Jonas'
+                }
               }
             }
-          }
-        })
+          })
 
-      await expect(createPostMutation('New news', 'Michelle'))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            createPost: {
-              title: 'New news',
-              votes: 0,
-              author: {
-                name: 'Michelle'
+        context.userId = michelleId
+        await expect(createPostMutation('New news', 'Michelle'))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              createPost: {
+                title: 'New news',
+                votes: 0,
+                author: {
+                  name: 'Michelle'
+                }
               }
             }
-          }
-        })
+          })
+      })
     })
   })
 
@@ -330,59 +343,106 @@ describe('mutations', () => {
           }`
     })
 
-    it('calls deletePost', async () => {
-      db.deletePost = jest.fn(() => {
+    describe('for unauthenticated users', () => {
+      it('does not call deletePost', async () => {
+        db.deletePost = jest.fn(() => [])
+        await deletePostMutation(0)
+        expect(db.deletePost).toHaveBeenCalledTimes(0)
       })
-      await deletePostMutation(1234)
-      expect(db.deletePost).toHaveBeenNthCalledWith(1, '1234')
+
+      it('returns an error', async () => {
+        const {
+          data,
+          errors: [error]
+        } = await deletePostMutation(0)
+
+        expect(data).toEqual(null)
+        expect(error.message).toEqual('Not Authorised!')
+      })
     })
 
-    it('returns an error if there\'s no post with the given ID', async () => {
-      const {
-        data,
-        errors: [error]
-      } = await deletePostMutation(0)
-      expect(data).toMatchObject({ deletePost: null })
-      expect(error.message).toEqual('No post found for ID 0!')
-    })
+    describe('for authenticated users', () => {
+      it('returns an error if there\'s no post with the given ID', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        const {
+          data,
+          errors: [error]
+        } = await deletePostMutation(0)
+        expect(data).toBeNull()
+        expect(error.message).toEqual('No post found for ID 0!')
+      })
 
-    it('deletes posts in the DB with valid authors given', async () => {
-      db.createUser('Jonas')
-      db.createPost('Some news', 123, 'Jonas')
-      db.createPost('Some SAD FAKE news', 456, 'Jonas')
-      expect(db.posts.size).toBe(2)
-      await deletePostMutation(0)
-      expect(db.posts.size).toBe(1)
-      await deletePostMutation(1)
-      expect(db.posts.size).toBe(0)
-    })
+      describe('if the inferred userId is not the author of the post to delete', () => {
+        it('returns an error', async () => {
+          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
 
-    it('returns properly deleted posts', async () => {
-      db.createUser('TestUser')
-      db.createPost('Hot news', 99, 'TestUser')
+          db.createPost('Some news', 123, michellesId)
 
-      await expect(deletePostMutation(0))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            deletePost: {
-              title: 'Hot news',
-              votes: 99,
-              author: {
-                name: 'TestUser',
-                posts: []
-              }
-            }
-          }
+          context.userId = jonasId
+
+          const {
+            data,
+            errors: [error]
+          } = await deletePostMutation(0)
+          expect(data).toBeNull()
+          expect(error.message).toEqual('May not delete a post of another user!')
+        })
+      })
+
+      describe('if the inferred userId is the author of the post to delete', () => {
+        it('calls deletePost', async () => {
+          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          db.createPost('Some news', 123, jonasId)
+          context.userId = jonasId
+
+          db.deletePost = jest.fn(() => {
+          })
+          await deletePostMutation(0)
+          expect(db.deletePost).toHaveBeenNthCalledWith(1, '0')
         })
 
-      const {
-        data,
-        errors: [error]
-      } = await deletePostMutation(0)
-      expect(data).toMatchObject({ deletePost: null })
-      expect(error.message).toEqual('No post found for ID 0!')
+        it('deletes posts in the DB', async () => {
+          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          db.createPost('Some news', 123, jonasId)
+          context.userId = jonasId
+
+          const { errors } = await deletePostMutation(0)
+          expect(errors).toBeUndefined()
+          expect(db.getPosts()).toHaveLength(0)
+          expect([...db.getUsers()[0].posts.values()]).toHaveLength(0)
+        })
+
+        it('returns properly deleted posts', async () => {
+          const jonasId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+          db.createPost('Hot news', 99, jonasId)
+
+          context.userId = jonasId
+
+          await expect(deletePostMutation(0))
+            .resolves
+            .toMatchObject({
+              errors: undefined,
+              data: {
+                deletePost: {
+                  title: 'Hot news',
+                  votes: 99,
+                  author: {
+                    name: 'TestUser',
+                    posts: []
+                  }
+                }
+              }
+            })
+
+          const {
+            data,
+            errors: [error]
+          } = await deletePostMutation(0)
+          expect(data).toBeNull()
+          expect(error.message).toEqual('No post found for ID 0!')
+        })
+      })
     })
   })
 

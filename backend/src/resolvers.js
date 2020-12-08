@@ -1,5 +1,6 @@
 import { ForbiddenError, UserInputError } from 'apollo-server-errors'
 import bcrypt from 'bcrypt'
+import { PostIdNotFoundError } from './db'
 
 const bcryptSaltRounds = 10
 
@@ -11,8 +12,14 @@ const resolvers = {
   Mutation: {
     createPost: (_, { post }, { dataSources, userId }) => dataSources.db.createPost(post.title, 0, userId),
     deletePost: (_, { id }, { dataSources, userId }) => {
-      const post = dataSources.db.getPost(id)
-      if (post.author.id !== userId) throw new ForbiddenError('May not delete a post of another user!')
+      let post = null
+      try {
+        post = dataSources.db.getPost(id)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+      if (post.author.id !== userId) return new ForbiddenError('May not delete a post of another user!')
       return dataSources.db.deletePost(id)
     },
     upvotePost: (_, { id }, { dataSources, userId }) => dataSources.db.upvotePost(id, userId),
