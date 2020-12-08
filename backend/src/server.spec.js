@@ -2,14 +2,36 @@ import { InMemoryNewsDS } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
+import bcrypt from 'bcrypt'
 
-let db = new InMemoryNewsDS()
+let db = null
+const context = {
+  getUserAuthenticationToken: null,
+  userId: 0
+}
+
+const jwtMockToken = 'JWT_MOCK_TOKEN'
+
+function hashPassword (password) {
+  return bcrypt.hashSync(password, 1)
+}
+
 beforeEach(() => {
   db = new InMemoryNewsDS()
 })
-const server = new NewsServer({ dataSources: () => ({ db }) })
 
-const { query, mutate } = createTestClient(server)
+const server = new NewsServer({
+  dataSources: () => ({ db }),
+  context: ({ _ }) => ({
+    getUserAuthenticationToken: () => context.getUserAuthenticationToken,
+    userId: context.userId
+  })
+})
+
+const {
+  query,
+  mutate
+} = createTestClient(server)
 
 describe('queries', () => {
   describe('posts', () => {
@@ -51,11 +73,11 @@ describe('queries', () => {
 
     describe('given posts in the DB', () => {
       it('returns posts in the expected format', async () => {
-        db.createUser('Jonas')
-        db.createUser('Michelle')
-        db.createPost('This is a post!', 42, 'Jonas')
-        db.createPost('This is another post!', 1337, 'Jonas')
-        db.createPost('This is yet another post!', 1234, 'Michelle')
+        db.createUser('Jonas', 'secretPassword')
+        db.createUser('Michelle', 'otherPassword')
+        db.createPost('This is a post!', 42, 0)
+        db.createPost('This is another post!', 1337, 0)
+        db.createPost('This is yet another post!', 1234, 1)
 
         await expect(postsQuery())
           .resolves
@@ -137,60 +159,76 @@ describe('queries', () => {
       `
     })
 
-    it('calls getUsers', async () => {
-      db.getUsers = jest.fn(() => [])
-      await usersQuery()
-      expect(db.getUsers).toHaveBeenCalledTimes(1)
+    describe('for unauthenticated users', () => {
+      it('does not call getUsers', async () => {
+        db.getUsers = jest.fn(() => [])
+        await usersQuery()
+        expect(db.getUsers).toHaveBeenCalledTimes(0)
+      })
+
+      it('returns empty array on empty DB', async () => {
+        const {
+          data,
+          errors: [error]
+        } = await usersQuery()
+
+        expect(data).toEqual(null)
+        expect(error.message).toEqual('Not Authorised!')
+      })
     })
 
-    it('returns empty array on empty DB', async () => {
-      await expect(usersQuery())
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: { users: [] }
+    describe('for authenticated users', () => {
+
+      it('calls getUsers', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        db.getUsers = jest.fn(() => [])
+        await usersQuery()
+        expect(db.getUsers).toHaveBeenCalledTimes(1)
+      })
+
+      describe('given users in the DB', () => {
+        it('returns users in the expected format', async () => {
+          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
+
+          db.createPost('This is a post!', 42, jonasId)
+          db.createPost('This is another post!', 1337, jonasId)
+          db.createPost('This is yet another post!', 1234, michellesId)
+
+          context.userId = jonasId
+
+          await expect(usersQuery())
+            .resolves
+            .toMatchObject({
+              errors: undefined,
+              data: {
+                users: [
+                  {
+                    name: 'Jonas',
+                    posts: [
+                      {
+                        id: '0',
+                        author: { name: 'Jonas' }
+                      },
+                      {
+                        id: '1',
+                        author: { name: 'Jonas' }
+                      }
+                    ]
+                  },
+                  {
+                    name: 'Michelle',
+                    posts: [
+                      {
+                        id: '2',
+                        author: { name: 'Michelle' }
+                      }
+                    ]
+                  }
+                ]
+              }
+            })
         })
-    })
-
-    describe('given users in the DB', () => {
-      it('returns users in the expected format', async () => {
-        db.createUser('Jonas')
-        db.createUser('Michelle')
-        db.createPost('This is a post!', 42, 'Jonas')
-        db.createPost('This is another post!', 1337, 'Jonas')
-        db.createPost('This is yet another post!', 1234, 'Michelle')
-
-        await expect(usersQuery())
-          .resolves
-          .toMatchObject({
-            errors: undefined,
-            data: {
-              users: [
-                {
-                  name: 'Jonas',
-                  posts: [
-                    {
-                      id: '0',
-                      author: { name: 'Jonas' }
-                    },
-                    {
-                      id: '1',
-                      author: { name: 'Jonas' }
-                    }
-                  ]
-                },
-                {
-                  name: 'Michelle',
-                  posts: [
-                    {
-                      id: '2',
-                      author: { name: 'Michelle' }
-                    }
-                  ]
-                }
-              ]
-            }
-          })
       })
     })
   })
@@ -198,14 +236,11 @@ describe('queries', () => {
 
 describe('mutations', () => {
   describe('createPost', () => {
-    const createPostMutation = (title, author) => mutate({
+    const createPostMutation = (title) => mutate({
       mutation: gql`
           mutation {
               createPost(post: {
                   title: "${title}"
-                  author: {
-                      name: "${author}"
-                  }
               }) {
                   title
                   votes
@@ -359,10 +394,11 @@ describe('mutations', () => {
           mutation {
               upvotePost(
                   id: "${id}"
-                  voter: {
-                      name: "${voterName}"
-                  }
-              )
+              ) {
+                  id,
+                  title,
+                  votes
+              }
           }`
     })
 
@@ -444,22 +480,23 @@ describe('mutations', () => {
   })
 
   describe('downvotePost', () => {
-    const downvotePostMutation = (id, voterName) => mutate({
+    const downvotePostMutation = (id) => mutate({
       mutation: gql`
           mutation {
               downvotePost(
                   id: "${id}"
-                  voter: {
-                      name: "${voterName}"
-                  }
-              )
+              ) {
+                  id,
+                  title,
+                  votes
+              }
           }`
     })
 
     it('calls downvotePost', async () => {
       db.downvotePost = jest.fn(() => {
       })
-      await downvotePostMutation(1234, 'Jonas')
+      await downvotePostMutation(1234)
       expect(db.downvotePost).toHaveBeenNthCalledWith(1, '1234', 'Jonas')
     })
 
@@ -469,7 +506,7 @@ describe('mutations', () => {
       const {
         data,
         errors: [error]
-      } = await downvotePostMutation(0, 'Jonas')
+      } = await downvotePostMutation(0)
       expect(data).toBeNull()
       expect(error.message).toEqual('No post found for ID 0!')
     })
@@ -481,7 +518,7 @@ describe('mutations', () => {
       const {
         data,
         errors: [error]
-      } = await downvotePostMutation(0, 'Jonas')
+      } = await downvotePostMutation(0)
       expect(data).toBeNull()
       expect(error.message).toEqual('No user found with name Jonas!')
     })
@@ -493,7 +530,7 @@ describe('mutations', () => {
       db.createPost('Hot new news', 99, 'TestUser')
       db.upvotePost('1', 'Michelle') // 99 -> 100 votes
 
-      await expect(downvotePostMutation(0, 'Michelle'))
+      await expect(downvotePostMutation(0))
         .resolves
         .toMatchObject({
           errors: undefined,
@@ -503,7 +540,7 @@ describe('mutations', () => {
         })
 
       // double downvote doesn't remove a vote
-      await expect(downvotePostMutation(0, 'Michelle'))
+      await expect(downvotePostMutation(0))
         .resolves
         .toMatchObject({
           errors: undefined,
@@ -512,7 +549,7 @@ describe('mutations', () => {
           }
         })
 
-      await expect(downvotePostMutation(0, 'TestUser'))
+      await expect(downvotePostMutation(0))
         .resolves
         .toMatchObject({
           errors: undefined,
@@ -522,7 +559,7 @@ describe('mutations', () => {
         })
 
       // downvote to upvote: -2 votes
-      await expect(downvotePostMutation(1, 'Michelle'))
+      await expect(downvotePostMutation(1))
         .resolves
         .toMatchObject({
           errors: undefined,
