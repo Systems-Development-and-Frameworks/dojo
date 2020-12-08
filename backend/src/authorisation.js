@@ -1,4 +1,4 @@
-import { allow, rule, shield } from 'graphql-shield'
+import { allow, deny, rule, shield } from 'graphql-shield'
 
 export class NotAuthorisedError extends Error {
   constructor () {
@@ -17,10 +17,12 @@ const isAuthenticated = rule({ cache: 'contextual' })(
 
 const permissions = shield({
   Query: {
+    '*': deny,
     posts: allow,
     users: isAuthenticated
   },
   Mutation: {
+    '*': deny,
     createPost: isAuthenticated,
     deletePost: isAuthenticated,
     upvotePost: isAuthenticated,
