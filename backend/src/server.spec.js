@@ -10,8 +10,6 @@ const context = {
   userId: 0
 }
 
-const jwtMockToken = 'JWT_MOCK_TOKEN'
-
 function hashPassword (password) {
   return bcrypt.hashSync(password, 1)
 }
@@ -178,7 +176,6 @@ describe('queries', () => {
     })
 
     describe('for authenticated users', () => {
-
       it('calls getUsers', async () => {
         context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
         db.getUsers = jest.fn(() => [])
