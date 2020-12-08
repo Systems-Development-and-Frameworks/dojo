@@ -1,6 +1,6 @@
 import { ForbiddenError, UserInputError } from 'apollo-server-errors'
 import bcrypt from 'bcrypt'
-import { EmailAlreadyExistsError, PostIdNotFoundError } from './db'
+import { EmailAlreadyExistsError, PostIdNotFoundError, UserEmailNotFoundError } from './db'
 
 const bcryptSaltRounds = 10
 
@@ -66,7 +66,13 @@ const resolvers = {
         .then((passwordHash) => getUserAuthenticationToken(dataSources.db.createUser(name, email, passwordHash)))
     },
     login: (_, { email, password }, { dataSources, getUserAuthenticationToken }) => {
-      const user = dataSources.db.getUserByEmail(email)
+      let user = null
+      try {
+        user = dataSources.db.getUserByEmail(email)
+      } catch (error) {
+        if (error instanceof UserEmailNotFoundError) return error
+        throw error
+      }
       return bcrypt.compare(password, user.passwordHash)
         .then((isEqual) => isEqual
           ? getUserAuthenticationToken(user.id)

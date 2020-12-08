@@ -1,10 +1,10 @@
-import { EmailAlreadyExistsError, InMemoryNewsDS, PostIdNotFoundError } from './db'
+import { EmailAlreadyExistsError, InMemoryNewsDS, PostIdNotFoundError, UserEmailNotFoundError } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
 import bcrypt from 'bcrypt'
 import { NotAuthorisedError } from './authorisation'
-import { DeletionOfOtherUsersPostForbiddenError, TooShortPasswordError } from './resolvers'
+import { DeletionOfOtherUsersPostForbiddenError, InvalidPasswordError, TooShortPasswordError } from './resolvers'
 
 function hashPassword (password) {
   return bcrypt.hashSync(password, 1)
@@ -758,6 +758,51 @@ describe('mutations', () => {
       } = await signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword')
       expect(data).toBeNull()
       expect(error.message).toBe(new EmailAlreadyExistsError().message)
+    })
+  })
+
+  describe('login', () => {
+    const loginMutation = (email, password) => mutate({
+      mutation: gql`
+          mutation {
+              login(
+                  email: "${email}"
+                  password: "${password}"
+              )
+          }`
+    })
+    it('returns an error if no user with the provided email exists', async () => {
+      const {
+        data,
+        errors: [error]
+      } = await loginMutation('t@t.de', 'someLongEnoughPassword')
+      expect(data).toBeNull()
+      expect(error.message).toBe(new UserEmailNotFoundError('t@t.de').message)
+    })
+
+    it('returns an error if an invalid password was provided', async () => {
+      db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+
+      const {
+        data,
+        errors: [error]
+      } = await loginMutation('j@j.de', 'someWrongPassword')
+      expect(data).toBeNull()
+      expect(error.message).toBe(new InvalidPasswordError().message)
+    })
+
+    it('returns a token on successful login', async () => {
+      db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+      context.getUserAuthenticationToken = 'someToken'
+
+      await expect(loginMutation('j@j.de', 'somePassword'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            login: 'someToken'
+          }
+        })
     })
   })
 })
