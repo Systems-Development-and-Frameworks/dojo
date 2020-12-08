@@ -581,80 +581,109 @@ describe('mutations', () => {
           }`
     })
 
-    it('calls downvotePost', async () => {
-      db.downvotePost = jest.fn(() => {
+    describe('for unauthenticated users', () => {
+      it('does not call downvotePost', async () => {
+        db.downvotePost = jest.fn(() => {
+        })
+        await downvotePostMutation(0)
+        expect(db.downvotePost).toHaveBeenCalledTimes(0)
       })
-      await downvotePostMutation(1234)
-      expect(db.downvotePost).toHaveBeenNthCalledWith(1, '1234', 'Jonas')
+
+      it('returns an error', async () => {
+        const {
+          data,
+          errors: [error]
+        } = await downvotePostMutation(0)
+
+        expect(data).toBeNull()
+        expect(error.message).toEqual('Not Authorised!')
+      })
     })
 
-    it('returns an error if there\'s no post with the given ID', async () => {
-      db.createUser('Jonas')
-
-      const {
-        data,
-        errors: [error]
-      } = await downvotePostMutation(0)
-      expect(data).toBeNull()
-      expect(error.message).toEqual('No post found for ID 0!')
-    })
-
-    it('returns an error if there\'s no user with the given name', async () => {
-      db.createUser('TestUser')
-      db.createPost('Hot news', 99, 'TestUser')
-
-      const {
-        data,
-        errors: [error]
-      } = await downvotePostMutation(0)
-      expect(data).toBeNull()
-      expect(error.message).toEqual('No user found with name Jonas!')
-    })
-
-    it('returns proper vote counts for upvoted posts', async () => {
-      db.createUser('TestUser')
-      db.createUser('Michelle')
-      db.createPost('Hot news', -99, 'TestUser')
-      db.createPost('Hot new news', 99, 'TestUser')
-      db.upvotePost('1', 'Michelle') // 99 -> 100 votes
-
-      await expect(downvotePostMutation(0))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            downvotePost: -100
-          }
+    describe('for authenticated users', () => {
+      it('calls downvotePost', async () => {
+        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        db.downvotePost = jest.fn(() => {
         })
+        await downvotePostMutation(1234)
+        expect(db.downvotePost).toHaveBeenNthCalledWith(1, '1234', context.userId)
+      })
 
-      // double downvote doesn't remove a vote
-      await expect(downvotePostMutation(0))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            downvotePost: -100
-          }
-        })
+      it('returns an error if there\'s no post with the given ID', async () => {
+        db.createUser('Jonas')
 
-      await expect(downvotePostMutation(0))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            downvotePost: -101
-          }
-        })
+        const {
+          data,
+          errors: [error]
+        } = await downvotePostMutation(0)
+        expect(data).toBeNull()
+        expect(error.message).toEqual(new PostIdNotFoundError(0).message)
+      })
 
-      // downvote to upvote: -2 votes
-      await expect(downvotePostMutation(1))
-        .resolves
-        .toMatchObject({
-          errors: undefined,
-          data: {
-            downvotePost: 98
-          }
-        })
+      it('returns proper vote counts for upvoted posts', async () => {
+        const testId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
+
+        db.createPost('Hot news', -99, testId)
+        db.createPost('Hot new news', 99, testId)
+        db.upvotePost('1', michellesId) // 99 -> 100 votes
+
+        context.userId = michellesId
+        await expect(downvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              downvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -100
+              }
+            }
+          })
+
+        // double downvote doesn't remove a vote
+        await expect(downvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              downvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -100
+              }
+            }
+          })
+
+        context.userId = testId
+        await expect(downvotePostMutation(0))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              downvotePost: {
+                id: '0',
+                title: 'Hot news',
+                votes: -101
+              }
+            }
+          })
+
+        // downvote to upvote: -2 votes
+        await expect(downvotePostMutation(1))
+          .resolves
+          .toMatchObject({
+            errors: undefined,
+            data: {
+              downvotePost: {
+                id: '1',
+                title: 'Hot new news',
+                votes: 99
+              }
+            }
+          })
+      })
     })
   })
 })
