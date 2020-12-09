@@ -29,7 +29,9 @@ const permissions = shield({
     downvotePost: isAuthenticated,
     login: allow,
     signup: allow
-  }
+  },
+  Post: allow,
+  User: allow
 }, {
   fallbackError: new NotAuthorisedError()
 })

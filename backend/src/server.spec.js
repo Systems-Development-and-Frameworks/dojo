@@ -223,7 +223,7 @@ describe('queries', () => {
                   {
                     id: '1',
                     name: 'Michelle',
-                    email: '',
+                    email: null,
                     posts: [
                       {
                         id: '2',
@@ -418,7 +418,7 @@ describe('mutations', () => {
           const { errors } = await deletePostMutation(0)
           expect(errors).toBeUndefined()
           expect(db.getPosts()).toHaveLength(0)
-          expect([...db.getUsers()[0].posts.values()]).toHaveLength(0)
+          expect([...db.getUsers()[0].postIds.values()]).toHaveLength(0)
         })
 
         it('returns properly deleted posts', async () => {

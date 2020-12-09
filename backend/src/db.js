@@ -55,11 +55,11 @@ export class InMemoryNewsDS extends DataSource {
   }
 
   hasUserWithEmail (email) {
-    return [...this.users.values()].find(user => user.email === email) !== undefined
+    return [...this.users.values()].find(user => user._email === email) !== undefined
   }
 
   getUserByEmail (email) {
-    const user = [...this.users.values()].find(user => user.email === email)
+    const user = [...this.users.values()].find(user => user._email === email)
     if (user === undefined) throw new UserEmailNotFoundError(email)
     return user
   }
@@ -67,9 +67,9 @@ export class InMemoryNewsDS extends DataSource {
   createPost (title, votes, authorId) {
     const author = this.users.get(authorId)
     if (author === undefined) throw new UserIdNotFoundError(authorId)
-    const post = new Post(String(this.nextPostId++), title, votes, author)
+    const post = new Post(String(this.nextPostId++), title, votes, authorId)
     this.posts.set(post.id, post)
-    this.users.get(authorId).posts.add(post)
+    this.users.get(authorId).postIds.add(post.id)
     return post
   }
 
@@ -82,7 +82,7 @@ export class InMemoryNewsDS extends DataSource {
   deletePost (id) {
     const post = this.getPost(id)
     this.posts.delete(id)
-    this.users.get(post.author.id).posts.delete(post)
+    this.users.get(post.authorId).postIds.delete(post.id)
     return post
   }
 

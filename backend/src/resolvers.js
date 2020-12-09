@@ -27,7 +27,6 @@ const resolvers = {
     posts: (_, __, { dataSources }) => dataSources.db.getPosts(),
     users: (_, __, { dataSources, userId }) => {
       return dataSources.db.getUsers()
-        .map((user) => user.id === userId ? user : { ...user, email: '' })
     }
   },
   Mutation: {
@@ -40,7 +39,7 @@ const resolvers = {
         if (error instanceof PostIdNotFoundError) return error
         throw error
       }
-      if (post.author.id !== userId) return new DeletionOfOtherUsersPostForbiddenError()
+      if (post.authorId !== userId) return new DeletionOfOtherUsersPostForbiddenError()
       return dataSources.db.deletePost(id)
     },
     upvotePost: (_, { id }, { dataSources, userId }) => {
@@ -73,11 +72,18 @@ const resolvers = {
         if (error instanceof UserEmailNotFoundError) return error
         throw error
       }
-      return bcrypt.compare(password, user.passwordHash)
+      return bcrypt.compare(password, user.getPasswordHash())
         .then((isEqual) => isEqual
           ? getUserAuthenticationToken(user.id)
           : new InvalidPasswordError())
     }
+  },
+  Post: {
+    author: (obj, _, { dataSources }) => dataSources.db.getUser(obj.authorId)
+  },
+  User: {
+    posts: (obj, _, { dataSources }) => [...obj.postIds.values()].map((postId) => dataSources.db.getPost(postId)),
+    email: (obj, _, { userId }) => userId === obj.id ? obj.getEmail() : null
   }
 }
 
