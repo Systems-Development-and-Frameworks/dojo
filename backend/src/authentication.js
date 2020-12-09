@@ -17,7 +17,10 @@ class Authentication {
       return null
     }
 
-    return jwt.verify(authorization, this.publicKey, { algorithms: ['ES256'] }).userId
+    return jwt.verify(
+      authorization.replace('Bearer ', ''),
+      this.publicKey,
+      { algorithms: ['ES256'] }).userId
   }
 }
 
