@@ -49,6 +49,16 @@ $ (backend) npm run test
 ```
 
 ### Compiles and hot-reloads for development
+
+The backend utilizes JSON Web Tokens for authentication. To cryptographically sign the tokens the backend application
+requires an ECDSA key to be present as a file named `private.pem` in the [`./backend`](./backend) directory.\
+Such a key can be generated with OpenSSL as follows:
+```
+$ (backend) openssl ecparam -genkey -name prime256v1 -noout -out private.pem
+```
+
+You can then start the backend server with:
+
 ```
 $ (backend) npm run dev
 ```
