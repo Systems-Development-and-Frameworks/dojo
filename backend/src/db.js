@@ -55,11 +55,11 @@ export class InMemoryNewsDS extends DataSource {
   }
 
   hasUserWithEmail (email) {
-    return [...this.users.values()].find(user => user._email === email) !== undefined
+    return [...this.users.values()].find(user => user.getEmail() === email) !== undefined
   }
 
   getUserByEmail (email) {
-    const user = [...this.users.values()].find(user => user._email === email)
+    const user = [...this.users.values()].find(user => user.getEmail() === email)
     if (user === undefined) throw new UserEmailNotFoundError(email)
     return user
   }
