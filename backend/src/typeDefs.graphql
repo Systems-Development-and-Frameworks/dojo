@@ -30,6 +30,8 @@ type Post {
 type User {
     id: ID!
     name: String!
+    # Difference to target schema: email is set only for the authenticated user.
+    # Alternatively redact other users' emails by setting them to an empty string
     email: String
     posts: [Post!]!
 }
