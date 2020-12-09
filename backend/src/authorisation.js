@@ -17,12 +17,10 @@ const isAuthenticated = rule({ cache: 'contextual' })(
 
 const permissions = shield({
   Query: {
-    '*': deny,
     posts: allow,
     users: isAuthenticated
   },
   Mutation: {
-    '*': deny,
     createPost: isAuthenticated,
     deletePost: isAuthenticated,
     upvotePost: isAuthenticated,
@@ -33,7 +31,8 @@ const permissions = shield({
   Post: allow,
   User: allow
 }, {
-  fallbackError: new NotAuthorisedError()
+  fallbackError: new NotAuthorisedError(),
+  fallbackRule: deny
 })
 
 export default permissions
