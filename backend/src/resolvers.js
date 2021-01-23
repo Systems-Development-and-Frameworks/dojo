@@ -1,13 +1,89 @@
+import { ForbiddenError, UserInputError } from 'apollo-server-errors'
+import bcrypt from 'bcrypt'
+import { EmailAlreadyExistsError, PostIdNotFoundError, UserEmailNotFoundError } from './db'
+
+const bcryptSaltRounds = 10
+
+export class DeletionOfOtherUsersPostForbiddenError extends ForbiddenError {
+  constructor () {
+    super('May not delete a post of another user!')
+  }
+}
+
+export class TooShortPasswordError extends UserInputError {
+  constructor () {
+    super('Password must be at least 8 characters long!')
+  }
+}
+
+export class InvalidPasswordError extends UserInputError {
+  constructor () {
+    super('Invalid password provided!')
+  }
+}
+
 const resolvers = {
   Query: {
     posts: (_, __, { dataSources }) => dataSources.db.getPosts(),
-    users: (_, __, { dataSources }) => dataSources.db.getUsers()
+    users: (_, __, { dataSources, userId }) => {
+      return dataSources.db.getUsers()
+    }
   },
   Mutation: {
-    createPost: (_, { post }, { dataSources }) => dataSources.db.createPost(post.title, 0, post.author.name),
-    deletePost: (_, { id }, { dataSources }) => dataSources.db.deletePost(id),
-    upvotePost: (_, { id, voter }, { dataSources }) => dataSources.db.upvotePost(id, voter.name),
-    downvotePost: (_, { id, voter }, { dataSources }) => dataSources.db.downvotePost(id, voter.name)
+    createPost: (_, { post }, { dataSources, userId }) => dataSources.db.createPost(post.title, 0, userId),
+    deletePost: (_, { id }, { dataSources, userId }) => {
+      let post = null
+      try {
+        post = dataSources.db.getPost(id)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+      if (post.authorId !== userId) return new DeletionOfOtherUsersPostForbiddenError()
+      return dataSources.db.deletePost(id)
+    },
+    upvotePost: (_, { id }, { dataSources, userId }) => {
+      try {
+        return dataSources.db.upvotePost(id, userId)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+    },
+    downvotePost: (_, { id }, { dataSources, userId }) => {
+      try {
+        return dataSources.db.downvotePost(id, userId)
+      } catch (error) {
+        if (error instanceof PostIdNotFoundError) return error
+        throw error
+      }
+    },
+    signup: (_, { name, email, password }, { dataSources, getUserAuthenticationToken }) => {
+      if (password.length < 8) return new TooShortPasswordError()
+      if (dataSources.db.hasUserWithEmail(email)) return new EmailAlreadyExistsError()
+      return bcrypt.hash(password, bcryptSaltRounds)
+        .then((passwordHash) => getUserAuthenticationToken(dataSources.db.createUser(name, email, passwordHash)))
+    },
+    login: (_, { email, password }, { dataSources, getUserAuthenticationToken }) => {
+      let user = null
+      try {
+        user = dataSources.db.getUserByEmail(email)
+      } catch (error) {
+        if (error instanceof UserEmailNotFoundError) return error
+        throw error
+      }
+      return bcrypt.compare(password, user.getPasswordHash())
+        .then((isEqual) => isEqual
+          ? getUserAuthenticationToken(user.id)
+          : new InvalidPasswordError())
+    }
+  },
+  Post: {
+    author: (obj, _, { dataSources }) => dataSources.db.getUser(obj.authorId)
+  },
+  User: {
+    posts: (obj, _, { dataSources }) => [...obj.postIds.values()].map((postId) => dataSources.db.getPost(postId)),
+    email: (obj, _, { userId }) => userId === obj.id ? obj.getEmail() : null
   }
 }
 

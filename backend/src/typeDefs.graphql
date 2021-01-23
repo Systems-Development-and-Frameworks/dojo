@@ -4,10 +4,20 @@ type Query {
 }
 
 type Mutation {
-    createPost(post: PostInput!): Post
-    deletePost(id: ID!): Post
-    upvotePost(id: ID!, voter: UserInput!): Int!
-    downvotePost(id: ID!, voter: UserInput!): Int!
+    createPost(post: PostInput!): Post!
+    deletePost(id: ID!): Post!
+    upvotePost(id: ID!): Post!
+    downvotePost(id: ID!): Post!
+
+    """
+    returns a signed JWT or null
+    """
+    login(email: String!, password: String!): String!
+
+    """
+    returns a signed JWT or null
+    """
+    signup(name: String!, email: String!, password: String!): String!
 }
 
 type Post {
@@ -18,13 +28,16 @@ type Post {
 }
 
 type User {
-    name: ID!
+    id: ID!
+    name: String!
+    # Difference to target schema: email is set only for the authenticated user.
+    # Alternatively redact other users' emails by setting them to an empty string
+    email: String
     posts: [Post!]!
 }
 
 input PostInput {
     title: String!
-    author: UserInput!
 }
 
 input UserInput {
