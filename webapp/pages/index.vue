@@ -25,8 +25,8 @@
 </template>
 
 <script>
-import NewsListItem from './components/NewsListItem.vue';
-import NewsListItemInput from "./components/NewsListItemInput";
+import NewsListItem from '../components/NewsListItem.vue';
+import NewsListItemInput from "../components/NewsListItemInput";
 
 export default {
   components: {
