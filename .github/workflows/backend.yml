@@ -5,13 +5,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [ main, exercise3 ]
+    branches: [ main, exercise5 ]
   pull_request:
-    branches: [ main, exercise3 ]
-
-defaults:
-  run:
-    working-directory: ./backend
+    branches: [ main, exercise5 ]
 
 jobs:
   build-test-lint:
@@ -22,13 +18,22 @@ jobs:
       matrix:
         node-version: [ 14.x ]
 
+    env:
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: test
+
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test
+      - uses: KarakoA/setup-neo4j@v1.1.1
+        with:
+          password: test
+          # user hardcoded to neo4j by action
+      - run: |
+              npm ci
+              npm run lint
+              npm run test
+        working-directory: ./backend/

@@ -1,30 +1,51 @@
-import { EmailAlreadyExistsError, InMemoryNewsDS, PostIdNotFoundError, UserEmailNotFoundError } from './db'
 import NewsServer from './server'
 import { createTestClient } from 'apollo-server-testing'
 import { gql } from 'apollo-server-core'
 import bcrypt from 'bcrypt'
 import { NotAuthorisedError } from './authorisation'
 import { DeletionOfOtherUsersPostForbiddenError, InvalidPasswordError, TooShortPasswordError } from './resolvers'
+import { EmailAlreadyExistsError, PostIdNotFoundError, UserEmailNotFoundError } from './dsErrors'
+import { NeodeDS } from './NeodeDS'
+import neo4jDriver from './neo4j-driver'
 
 function hashPassword (password) {
   return bcrypt.hashSync(password, 1)
 }
 
 let db = null
-beforeEach(() => {
-  db = new InMemoryNewsDS()
+let context = null
+
+async function cleanDB () {
+  if (db) await db.neode.close()
+  db = new NeodeDS() // to revert mocks
+  await db.neode.writeCypher('MATCH(n) DETACH DELETE n')
+}
+
+beforeAll(cleanDB)
+beforeEach(async () => {
+  context = {
+    getUserAuthenticationToken: null,
+    userId: null
+  }
+  await cleanDB()
+})
+afterAll(async () => {
+  await cleanDB()
+  await db.neode.close()
+  await neo4jDriver.close()
 })
 
-const context = {
-  getUserAuthenticationToken: null,
-  userId: 0
+async function getPostCount () {
+  const { records: [countRecord] } = await db.neode.cypher('MATCH (p:Post) RETURN COUNT(p) AS count')
+  return countRecord.get('count').toNumber()
 }
 
 const server = new NewsServer({
   dataSources: () => ({ db }),
   context: ({ _ }) => ({
     getUserAuthenticationToken: () => context.getUserAuthenticationToken,
-    userId: context.userId
+    userId: context.userId,
+    driver: neo4jDriver
   })
 })
 
@@ -56,12 +77,6 @@ describe('queries', () => {
       `
     })
 
-    it('calls getPosts', async () => {
-      db.getPosts = jest.fn(() => [])
-      await postsQuery()
-      expect(db.getPosts).toHaveBeenCalledTimes(1)
-    })
-
     it('returns empty array on empty DB', async () => {
       await expect(postsQuery())
         .resolves
@@ -73,70 +88,70 @@ describe('queries', () => {
 
     describe('given posts in the DB', () => {
       it('returns posts in the expected format', async () => {
-        const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
+        const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        const michellesId = await db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
 
-        db.createPost('This is a post!', 42, jonasId)
-        db.createPost('This is another post!', 1337, jonasId)
-        db.createPost('This is yet another post!', 1234, michellesId)
+        const { id: firstId } = await db.createPost('This is a post!', jonasId)
+        const { id: secondId } = await db.createPost('This is another post!', jonasId)
+        const { id: thirdId } = await db.createPost('This is yet another post!', michellesId)
 
         await expect(postsQuery())
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
-              posts: [
+              posts: expect.arrayContaining([
                 {
-                  id: '0',
+                  id: firstId,
                   title: 'This is a post!',
-                  votes: 42,
+                  votes: 0,
                   author: {
                     name: 'Jonas',
-                    posts: [
+                    posts: expect.arrayContaining([
                       {
-                        id: '0',
+                        id: firstId,
                         author: { name: 'Jonas' }
                       },
                       {
-                        id: '1',
+                        id: secondId,
                         author: { name: 'Jonas' }
                       }
-                    ]
+                    ])
                   }
                 },
                 {
-                  id: '1',
+                  id: secondId,
                   title: 'This is another post!',
-                  votes: 1337,
+                  votes: 0,
                   author: {
                     name: 'Jonas',
-                    posts: [
+                    posts: expect.arrayContaining([
                       {
-                        id: '0',
+                        id: firstId,
                         author: { name: 'Jonas' }
                       },
                       {
-                        id: '1',
+                        id: secondId,
                         author: { name: 'Jonas' }
                       }
-                    ]
+                    ])
                   }
                 },
                 {
-                  id: '2',
+                  id: thirdId,
                   title: 'This is yet another post!',
-                  votes: 1234,
+                  votes: 0,
                   author: {
                     name: 'Michelle',
                     posts: [
                       {
-                        id: '2',
+                        id: thirdId,
                         author: { name: 'Michelle' }
                       }
                     ]
                   }
                 }
-              ]
+              ])
             }
           })
       })
@@ -163,12 +178,6 @@ describe('queries', () => {
     })
 
     describe('for unauthenticated users', () => {
-      it('does not call getUsers', async () => {
-        db.getUsers = jest.fn(() => [])
-        await usersQuery()
-        expect(db.getUsers).toHaveBeenCalledTimes(0)
-      })
-
       it('returns an error', async () => {
         const {
           data,
@@ -181,21 +190,14 @@ describe('queries', () => {
     })
 
     describe('for authenticated users', () => {
-      it('calls getUsers', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-        db.getUsers = jest.fn(() => [])
-        await usersQuery()
-        expect(db.getUsers).toHaveBeenCalledTimes(1)
-      })
-
       describe('given users in the DB', () => {
         it('returns users in the expected format', async () => {
-          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-          const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
+          const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const michellesId = await db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
 
-          db.createPost('This is a post!', 42, jonasId)
-          db.createPost('This is another post!', 1337, jonasId)
-          db.createPost('This is yet another post!', 1234, michellesId)
+          const { id: firstId } = await db.createPost('This is a post!', jonasId)
+          const { id: secondId } = await db.createPost('This is another post!', jonasId)
+          const { id: thirdId } = await db.createPost('This is yet another post!', michellesId)
 
           context.userId = jonasId
 
@@ -204,34 +206,34 @@ describe('queries', () => {
             .toMatchObject({
               errors: undefined,
               data: {
-                users: [
+                users: expect.arrayContaining([
                   {
-                    id: '0',
+                    id: jonasId,
                     name: 'Jonas',
                     email: 'j@j.de',
-                    posts: [
+                    posts: expect.arrayContaining([
                       {
-                        id: '0',
+                        id: firstId,
                         author: { name: 'Jonas' }
                       },
                       {
-                        id: '1',
+                        id: secondId,
                         author: { name: 'Jonas' }
                       }
-                    ]
+                    ])
                   },
                   {
-                    id: '1',
+                    id: michellesId,
                     name: 'Michelle',
                     email: null,
-                    posts: [
+                    posts: expect.arrayContaining([
                       {
-                        id: '2',
+                        id: thirdId,
                         author: { name: 'Michelle' }
                       }
-                    ]
+                    ])
                   }
-                ]
+                ])
               }
             })
         })
@@ -278,25 +280,25 @@ describe('mutations', () => {
 
     describe('for authenticated users', () => {
       it('calls createPost and derives the userId from the context', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
         db.createPost = jest.fn(() => {
         })
         await createPostMutation('A nice test title', context.userId)
-        expect(db.createPost).toHaveBeenNthCalledWith(1, 'A nice test title', 0, context.userId)
+        expect(db.createPost).toHaveBeenNthCalledWith(1, 'A nice test title', context.userId)
       })
 
       it('created posts in the DB with author inferred from the context', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-        expect(db.posts.size).toBe(0)
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        expect(await getPostCount()).toBe(0)
         await createPostMutation('Some news')
-        expect(db.posts.size).toBe(1)
+        expect(await getPostCount()).toBe(1)
         await createPostMutation('Some other news')
-        expect(db.posts.size).toBe(2)
+        expect(await getPostCount()).toBe(2)
       })
 
       it('returns created posts with valid authors inferred from the context', async () => {
-        const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-        const michelleId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
+        const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        const michelleId = await db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
 
         context.userId = jonasId
         await expect(createPostMutation('A nice test title'))
@@ -371,7 +373,7 @@ describe('mutations', () => {
 
     describe('for authenticated users', () => {
       it('returns an error if there\'s no post with the given ID', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
         const {
           data,
           errors: [error]
@@ -382,17 +384,17 @@ describe('mutations', () => {
 
       describe('if the inferred userId is not the author of the post to delete', () => {
         it('returns an error', async () => {
-          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-          const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
+          const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const michellesId = await db.createUser('Michelle', 'm@m.de', hashPassword('MichellesPassword'))
 
-          db.createPost('Some news', 123, michellesId)
+          const { id } = await db.createPost('Some news', michellesId)
 
           context.userId = jonasId
 
           const {
             data,
             errors: [error]
-          } = await deletePostMutation(0)
+          } = await deletePostMutation(id)
           expect(data).toBeNull()
           expect(error.message).toEqual(new DeletionOfOtherUsersPostForbiddenError().message)
         })
@@ -400,44 +402,48 @@ describe('mutations', () => {
 
       describe('if the inferred userId is the author of the post to delete', () => {
         it('calls deletePost', async () => {
-          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-          db.createPost('Some news', 123, jonasId)
+          const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const { id } = await db.createPost('Some news', jonasId)
           context.userId = jonasId
 
           db.deletePost = jest.fn(() => {
           })
-          await deletePostMutation(0)
-          expect(db.deletePost).toHaveBeenNthCalledWith(1, '0')
+          await deletePostMutation(id)
+          expect(db.deletePost).toHaveBeenNthCalledWith(1, id)
         })
 
         it('deletes posts in the DB', async () => {
-          const jonasId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
-          db.createPost('Some news', 123, jonasId)
+          const jonasId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+          const { id } = await db.createPost('Some news', jonasId)
           context.userId = jonasId
 
-          const { errors } = await deletePostMutation(0)
+          const { errors } = await deletePostMutation(id)
           expect(errors).toBeUndefined()
-          expect(db.getPosts()).toHaveLength(0)
-          expect([...db.getUsers()[0].postIds.values()]).toHaveLength(0)
+          expect(await getPostCount()).toBe(0)
         })
 
         it('returns properly deleted posts', async () => {
-          const jonasId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
-          db.createPost('Hot news', 99, jonasId)
+          const jonasId = await db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+          const { id } = await db.createPost('Hot news', jonasId)
 
           context.userId = jonasId
 
-          await expect(deletePostMutation(0))
+          await expect(deletePostMutation(id))
             .resolves
             .toMatchObject({
               errors: undefined,
               data: {
                 deletePost: {
                   title: 'Hot news',
-                  votes: 99,
+                  votes: 0,
                   author: {
                     name: 'TestUser',
-                    posts: []
+                    posts: [
+                      {
+                        title: 'Hot news', // TODO: Should this show up?
+                        votes: 0
+                      }
+                    ]
                   }
                 }
               }
@@ -489,7 +495,7 @@ describe('mutations', () => {
 
     describe('for authenticated users', () => {
       it('calls upvotePost', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
         db.upvotePost = jest.fn(() => {
         })
         await upvotePostMutation(1234)
@@ -497,7 +503,7 @@ describe('mutations', () => {
       })
 
       it('returns an error if there\'s no post with the given ID', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
 
         const {
           data,
@@ -508,66 +514,66 @@ describe('mutations', () => {
       })
 
       it('returns proper vote counts for upvoted posts', async () => {
-        const testId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
-        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
+        const testId = await db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+        const michellesId = await db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
 
-        db.createPost('Hot news', -99, testId)
-        db.createPost('Hot new news', 99, testId)
-        db.downvotePost('1', michellesId) // 99 -> 98 votes
+        const { id: firstId } = await db.createPost('Hot news', testId)
+        const { id: secondId } = await db.createPost('Hot new news', testId)
+        await db.downvotePost(secondId, michellesId) // 0 -> -1 votes
 
         context.userId = michellesId
-        await expect(upvotePostMutation(0))
+        await expect(upvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               upvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -98
+                votes: 1
               }
             }
           })
 
         // double upvote doesn't add a vote
-        await expect(upvotePostMutation(0))
+        await expect(upvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               upvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -98
+                votes: 1
               }
             }
           })
 
         context.userId = testId
-        await expect(upvotePostMutation(0))
+        await expect(upvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               upvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -97
+                votes: 2
               }
             }
           })
 
         context.userId = michellesId
         // downvote to upvote: +2 votes
-        await expect(upvotePostMutation(1))
+        await expect(upvotePostMutation(secondId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               upvotePost: {
-                id: '1',
+                id: secondId,
                 title: 'Hot new news',
-                votes: 100
+                votes: 1
               }
             }
           })
@@ -610,7 +616,7 @@ describe('mutations', () => {
 
     describe('for authenticated users', () => {
       it('calls downvotePost', async () => {
-        context.userId = db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+        context.userId = await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
         db.downvotePost = jest.fn(() => {
         })
         await downvotePostMutation(1234)
@@ -618,7 +624,7 @@ describe('mutations', () => {
       })
 
       it('returns an error if there\'s no post with the given ID', async () => {
-        db.createUser('Jonas')
+        context.userId = await db.createUser('Jonas', 't@t.de', hashPassword('somePassword'))
 
         const {
           data,
@@ -629,65 +635,65 @@ describe('mutations', () => {
       })
 
       it('returns proper vote counts for upvoted posts', async () => {
-        const testId = db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
-        const michellesId = db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
+        const testId = await db.createUser('TestUser', 't@t.de', hashPassword('somePassword'))
+        const michellesId = await db.createUser('Michelle', 'm@m.de', hashPassword('someOtherPassword'))
 
-        db.createPost('Hot news', -99, testId)
-        db.createPost('Hot new news', 99, testId)
-        db.upvotePost('1', michellesId) // 99 -> 100 votes
+        const { id: firstId } = await db.createPost('Hot news', testId)
+        const { id: secondId } = await db.createPost('Hot new news', testId)
+        await db.upvotePost(secondId, testId) // 0 -> 1 votes
 
         context.userId = michellesId
-        await expect(downvotePostMutation(0))
+        await expect(downvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               downvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -100
+                votes: -1
               }
             }
           })
 
         // double downvote doesn't remove a vote
-        await expect(downvotePostMutation(0))
+        await expect(downvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               downvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -100
+                votes: -1
               }
             }
           })
 
         context.userId = testId
-        await expect(downvotePostMutation(0))
+        await expect(downvotePostMutation(firstId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               downvotePost: {
-                id: '0',
+                id: firstId,
                 title: 'Hot news',
-                votes: -101
+                votes: -2
               }
             }
           })
 
-        // downvote to upvote: -2 votes
-        await expect(downvotePostMutation(1))
+        // upvote to downvote: -2 votes
+        await expect(downvotePostMutation(secondId))
           .resolves
           .toMatchObject({
             errors: undefined,
             data: {
               downvotePost: {
-                id: '1',
+                id: secondId,
                 title: 'Hot new news',
-                votes: 99
+                votes: -1
               }
             }
           })
@@ -720,14 +726,35 @@ describe('mutations', () => {
     })
 
     it('calls createUser', async () => {
+      context.getUserAuthenticationToken = 'someToken'
       db.createUser = jest.fn(() => [])
-      await (signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+
+      await expect(signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            signup: 'someToken'
+          }
+        })
       expect(db.createUser).toHaveBeenNthCalledWith(1, 'TestUser', 't@t.de', expect.stringMatching(/.+/))
     })
 
     it('does not store the password as-is in the DB', async () => {
-      await (signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
-      expect(db.getUsers()[0].password).not.toBe('someLongEnoughPassword')
+      context.getUserAuthenticationToken = 'someToken'
+
+      await expect(signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword'))
+        .resolves
+        .toMatchObject({
+          errors: undefined,
+          data: {
+            signup: 'someToken'
+          }
+        })
+      const { records: [userRecord] } = await db.neode.cypher('MATCH (u:User) RETURN u')
+      const properties = userRecord.get('u').properties
+      expect(properties.name).toBe('TestUser')
+      expect(Object.values(properties)).not.toContain('someLongEnoughPassword')
     })
 
     it('returns a token on successful signup', async () => {
@@ -757,7 +784,7 @@ describe('mutations', () => {
         errors: [error]
       } = await signupMutation('TestUser', 't@t.de', 'someLongEnoughPassword')
       expect(data).toBeNull()
-      expect(error.message).toBe(new EmailAlreadyExistsError().message)
+      expect(error.message).toBe(new EmailAlreadyExistsError('t@t.de').message)
     })
   })
 
@@ -781,7 +808,7 @@ describe('mutations', () => {
     })
 
     it('returns an error if an invalid password was provided', async () => {
-      db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+      await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
 
       const {
         data,
@@ -792,7 +819,7 @@ describe('mutations', () => {
     })
 
     it('returns a token on successful login', async () => {
-      db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
+      await db.createUser('Jonas', 'j@j.de', hashPassword('somePassword'))
       context.getUserAuthenticationToken = 'someToken'
 
       await expect(loginMutation('j@j.de', 'somePassword'))
