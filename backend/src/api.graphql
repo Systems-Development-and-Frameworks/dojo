@@ -1,4 +1,5 @@
 type Query {
+    post(id: ID!): Post!
     posts: [Post!]!
     users: [User!]!
 }
@@ -20,20 +21,8 @@ type Mutation {
     signup(name: String!, email: String!, password: String!): String!
 }
 
-type Post {
-    id: ID!
-    title: String!
+extend type Post {
     votes: Int!
-    author: User!
-}
-
-type User {
-    id: ID!
-    name: String!
-    # Difference to target schema: email is set only for the authenticated user.
-    # Alternatively redact other users' emails by setting them to an empty string
-    email: String
-    posts: [Post!]!
 }
 
 input PostInput {

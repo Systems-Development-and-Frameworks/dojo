@@ -1,6 +1,8 @@
 import { ForbiddenError, UserInputError } from 'apollo-server-errors'
+import { EmailAlreadyExistsError, PostIdNotFoundError, UserEmailNotFoundError } from './dsErrors'
+
 import bcrypt from 'bcrypt'
-import { EmailAlreadyExistsError, PostIdNotFoundError, UserEmailNotFoundError } from './db'
+import { delegateToSchema } from '@graphql-tools/delegate'
 
 const bcryptSaltRounds = 10
 
@@ -22,69 +24,127 @@ export class InvalidPasswordError extends UserInputError {
   }
 }
 
-const resolvers = {
-  Query: {
-    posts: (_, __, { dataSources }) => dataSources.db.getPosts(),
-    users: (_, __, { dataSources, userId }) => {
-      return dataSources.db.getUsers()
-    }
-  },
-  Mutation: {
-    createPost: (_, { post }, { dataSources, userId }) => dataSources.db.createPost(post.title, 0, userId),
-    deletePost: (_, { id }, { dataSources, userId }) => {
-      let post = null
-      try {
-        post = dataSources.db.getPost(id)
-      } catch (error) {
-        if (error instanceof PostIdNotFoundError) return error
-        throw error
-      }
-      if (post.authorId !== userId) return new DeletionOfOtherUsersPostForbiddenError()
-      return dataSources.db.deletePost(id)
+export default ({ subschema }) => {
+  async function delegateQueryPost (id, context, info) {
+    const [post] = await delegateToSchema({
+      schema: subschema,
+      operation: 'query',
+      fieldName: 'Post',
+      args: {
+        id
+      },
+      context,
+      info
+    })
+    return post
+  }
+
+  return {
+    Query: {
+      post: async (_, { id }, context, info) => await delegateQueryPost(id, context, info),
+      posts: async (_, __, context, info) => await delegateToSchema({
+        schema: subschema,
+        operation: 'query',
+        fieldName: 'Post',
+        context,
+        info
+      }),
+      users: async (_, __, context, info) => await delegateToSchema({
+        schema: subschema,
+        operation: 'query',
+        fieldName: 'User',
+        context,
+        info
+      })
     },
-    upvotePost: (_, { id }, { dataSources, userId }) => {
-      try {
-        return dataSources.db.upvotePost(id, userId)
-      } catch (error) {
-        if (error instanceof PostIdNotFoundError) return error
-        throw error
-      }
-    },
-    downvotePost: (_, { id }, { dataSources, userId }) => {
-      try {
-        return dataSources.db.downvotePost(id, userId)
-      } catch (error) {
-        if (error instanceof PostIdNotFoundError) return error
-        throw error
-      }
-    },
-    signup: (_, { name, email, password }, { dataSources, getUserAuthenticationToken }) => {
-      if (password.length < 8) return new TooShortPasswordError()
-      if (dataSources.db.hasUserWithEmail(email)) return new EmailAlreadyExistsError()
-      return bcrypt.hash(password, bcryptSaltRounds)
-        .then((passwordHash) => getUserAuthenticationToken(dataSources.db.createUser(name, email, passwordHash)))
-    },
-    login: (_, { email, password }, { dataSources, getUserAuthenticationToken }) => {
-      let user = null
-      try {
-        user = dataSources.db.getUserByEmail(email)
-      } catch (error) {
-        if (error instanceof UserEmailNotFoundError) return error
-        throw error
-      }
-      return bcrypt.compare(password, user.getPasswordHash())
-        .then((isEqual) => isEqual
+    Mutation: {
+      createPost: async (_, { post }, context, info) => {
+        const { id } = await context.dataSources.db.createPost(post.title, context.userId)
+        return await delegateQueryPost(id, context, info)
+      },
+      deletePost: async (_, { id }, context, info) => {
+        try {
+          const { authorId } = await context.dataSources.db.getPost(id)
+          if (authorId !== context.userId) return new DeletionOfOtherUsersPostForbiddenError()
+        } catch (error) {
+          if (error instanceof PostIdNotFoundError) return error
+          throw error
+        }
+
+        const post = await delegateQueryPost(id, context, info)
+        await context.dataSources.db.deletePost(id)
+        return post
+      },
+      upvotePost: async (_, { id }, context, info) => {
+        try {
+          await context.dataSources.db.upvotePost(id, context.userId)
+
+          return await delegateQueryPost(id, context, info)
+        } catch (error) {
+          if (error instanceof PostIdNotFoundError) return error
+          throw error
+        }
+      },
+      downvotePost: async (_, { id }, context, info) => {
+        try {
+          await context.dataSources.db.downvotePost(id, context.userId)
+
+          return await delegateQueryPost(id, context, info)
+        } catch (error) {
+          if (error instanceof PostIdNotFoundError) return error
+          throw error
+        }
+      },
+      signup: async (_, {
+        name,
+        email,
+        password
+      }, {
+        dataSources,
+        getUserAuthenticationToken
+      }) => {
+        if (password.length < 8) return new TooShortPasswordError()
+        const hasUserWithEmail = await dataSources.db.hasUserWithEmail(email)
+        if (hasUserWithEmail) return new EmailAlreadyExistsError(email)
+        const passwordHash = await bcrypt.hash(password, bcryptSaltRounds)
+        try {
+          const userId = await dataSources.db.createUser(name, email, passwordHash)
+          return getUserAuthenticationToken(userId)
+        } catch (error) {
+          if (error instanceof EmailAlreadyExistsError) return error
+          throw error
+        }
+      },
+      login: async (_, {
+        email,
+        password
+      }, {
+        dataSources,
+        getUserAuthenticationToken
+      }) => {
+        let user = null
+        try {
+          user = await dataSources.db.getUserByEmail(email)
+        } catch (error) {
+          if (error instanceof UserEmailNotFoundError) return error
+          throw error
+        }
+        return await bcrypt.compare(password, user.passwordHash)
           ? getUserAuthenticationToken(user.id)
-          : new InvalidPasswordError())
+          : new InvalidPasswordError()
+      }
+    },
+    Post: {
+      votes: {
+        selectionSet: '{ id }',
+        resolve: async (obj, _, { dataSources }) => {
+          const [upvotes, downvotes] = await dataSources.db.getVotesForPost(obj.id)
+          return upvotes - downvotes
+        }
+      }
+    },
+    User: {
+      email: (obj, _, { userId }) => userId === obj.id ? obj.email : null
     }
-  },
-  Post: {
-    author: (obj, _, { dataSources }) => dataSources.db.getUser(obj.authorId)
-  },
-  User: {
-    posts: (obj, _, { dataSources }) => [...obj.postIds.values()].map((postId) => dataSources.db.getPost(postId)),
-    email: (obj, _, { userId }) => userId === obj.id ? obj.getEmail() : null
   }
 }
-
-export default resolvers
