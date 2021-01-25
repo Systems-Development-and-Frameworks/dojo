@@ -9,7 +9,7 @@
     "sb": "nuxt storybook",
     "sbe": "nuxt storybook eject",
     "generate": "nuxt generate",
-    "lint:js": "eslint --ext \\\".js,.vue\\\" --ignore-path .gitignore .",
+    "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "lint": "npm run lint:js",
     "test": "jest"
   },
