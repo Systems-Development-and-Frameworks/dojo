@@ -42,7 +42,6 @@ export default {
     },
     userVote: {
       type: Number,
-      required: true
     }
   },
   computed: {

@@ -83,13 +83,16 @@ export default {
           variables: { title },
           update (store, { data: { createPost } }) {
             const data = store.readQuery({ query: posts })
-            data.posts.push(createPost)
+            const newPosts = [...data.posts]
+            newPosts.push(createPost)
             store.writeQuery({
               query: posts,
-              data,
+              data: {
+                posts: newPosts
+              }
             })
           }
-        }).then(({ data }) => data && data.deletePost)
+        }).then(({ data }) => data && data.createPost)
       } catch (e) {
         console.log(e)
       }
@@ -106,10 +109,13 @@ export default {
             const data = store.readQuery({ query: posts })
             const index = data.posts.findIndex(p => p.id === id)
             if (index !== -1) {
-              data.posts.splice(index, 1)
+              const newPosts = [...data.posts]
+              newPosts.splice(index, 1)
               store.writeQuery({
                 query: posts,
-                data
+                data: {
+                  posts: newPosts
+                }
               })
             }
           }

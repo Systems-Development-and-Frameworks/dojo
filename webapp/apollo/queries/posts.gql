@@ -6,6 +6,8 @@
         userVote
         author {
             id
+            __typename
         }
+        __typename
     }
 }

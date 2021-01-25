@@ -4,8 +4,10 @@ mutation createPost($title: String!) {
         title
         votes
         userVote
+        __typename
         author {
             id
+            __typename
         }
     }
 }
