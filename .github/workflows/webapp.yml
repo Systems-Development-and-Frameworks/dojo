@@ -5,9 +5,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [ main, exercise3 ]
+    branches: [ main, exercise7 ]
   pull_request:
-    branches: [ main, exercise3 ]
+    branches: [ main, exercise7 ]
 
 defaults:
   run:
