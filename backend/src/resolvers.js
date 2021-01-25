@@ -141,6 +141,15 @@ export default ({ subschema }) => {
           const [upvotes, downvotes] = await dataSources.db.getVotesForPost(obj.id)
           return upvotes - downvotes
         }
+      },
+      userVote: {
+        selectionSet: '{ id }',
+        resolve: async (obj, _, {
+          dataSources,
+          userId
+        }) => {
+          return userId !== null ? await dataSources.db.getVoteForPost(obj.id, userId) : null
+        }
       }
     },
     User: {

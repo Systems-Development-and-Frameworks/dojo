@@ -1,0 +1,11 @@
+{
+    posts {
+        id
+        title
+        votes
+        userVote
+        author {
+            id
+        }
+    }
+}

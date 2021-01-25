@@ -113,6 +113,24 @@ export class NeodeDS extends DataSource {
       .map(neo4jInt => neo4jInt.toNumber())
   }
 
+  async getVoteForPost (postId, userId) {
+    return await Promise
+      .all([
+        this.getPost(postId),
+        this.getUser(userId)
+      ])
+      .then(async ([{ id: postId }, { id: userId }]) => {
+        const { records: [record] } = await this.neode.cypher(`
+        MATCH (u:User{ id: $userId }), (p:Post{ id: $postId })
+        RETURN EXISTS((u)-[:DOWNVOTED]->(p)) AS has_downvote, EXISTS((u)-[:UPVOTED]->(p)) AS has_upvote
+        `, {
+          postId,
+          userId
+        })
+        return record.get('has_downvote') ? -1 : (record.get('has_upvote') ? +1 : 0)
+      })
+  }
+
   async getPost (id) {
     const node = await this.neode.first('Post', { id })
     if (!node) throw new PostIdNotFoundError(id)
