@@ -49,7 +49,7 @@
 </template>
 
 <script>
-import login from '../apollo/mutations/login'
+import login from '../apollo/mutations/login.gql'
 import { mapActions, mapGetters } from 'vuex'
 import { ApolloError } from '@apollo/client'
 

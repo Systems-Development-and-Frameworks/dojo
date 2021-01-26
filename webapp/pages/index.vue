@@ -30,11 +30,11 @@
 import NewsListItem from '../components/NewsListItem.vue'
 import NewsListItemInput from '../components/NewsListItemInput'
 
-import posts from '../apollo/queries/posts'
-import upvotePost from '../apollo/mutations/upvotePost'
-import downvotePost from '../apollo/mutations/downvotePost'
-import deletePost from '../apollo/mutations/deletePost'
-import createPost from '../apollo/mutations/createPost'
+import posts from '../apollo/queries/posts.gql'
+import upvotePost from '../apollo/mutations/upvotePost.gql'
+import downvotePost from '../apollo/mutations/downvotePost.gql'
+import deletePost from '../apollo/mutations/deletePost.gql'
+import createPost from '../apollo/mutations/createPost.gql'
 import { mapGetters } from 'vuex'
 
 export default {
