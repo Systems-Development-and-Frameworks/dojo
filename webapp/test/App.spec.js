@@ -1,6 +1,6 @@
 import {shallowMount} from '@vue/test-utils';
 import '@testing-library/jest-dom';
-import App from "./App";
+import App from "../pages";
 import 'regenerator-runtime';
 import Vue from "vue";
 
