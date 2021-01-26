@@ -60,4 +60,13 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {},
+  pwa: {
+    manifest: {
+      name: 'dojo_news',
+      start_url: '/',
+      display: 'standalone',
+      background: '#ececec',
+      theme_color: '#0083e3',
+    },
+  },
 }
