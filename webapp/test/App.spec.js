@@ -22,8 +22,20 @@ describe('News List', () => {
 
   let wrapper, mockClient, apolloProvider, store
 
+  const typePolicies = {
+    Query: {
+      fields: {
+        posts: {
+          merge (existing, incoming) {
+            return incoming
+          }
+        }
+      }
+    }
+  }
+
   const createApp = async (handlers, appOptions) => {
-    mockClient = createMockClient({ cache: new InMemoryCache() })
+    mockClient = createMockClient({ cache: new InMemoryCache({ typePolicies }) })
     apolloProvider = new VueApollo({
       defaultClient: mockClient
     })
