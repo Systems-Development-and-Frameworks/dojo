@@ -1,10 +1,13 @@
 import App from "./index.vue";
 
+App.apollo = null
+App.props.posts = []
+
 export default {
     title: 'App',
     component: App,
     argTypes: {
-        initialNewsListItems: {control: 'object'}
+        posts: {control: 'object'}
     }
 };
 
@@ -15,29 +18,31 @@ const Template = (args, {argTypes}) => ({
 });
 
 export const Default = Template.bind({});
-Default.args = {};
+Default.args = {
+    posts: []
+};
 
 export const EmptyNewsList = Template.bind({});
 EmptyNewsList.args = {
-    initialNewsListItems: []
+    posts: []
 };
 
 export const AscendingOrderedNewsList = Template.bind({});
 AscendingOrderedNewsList.args = {
     initialDescendingOrder: false,
-    initialNewsListItems: [
-        {id: 0, title: "macOS", votes: 3},
-        {id: 1, title: "Linux", votes: 2},
-        {id: 2, title: "Windows", votes: 1}
+    posts: [
+        {id: "0", title: "macOS", votes: 3, author: "1"},
+        {id: "1", title: "Linux", votes: 2, author: "1"},
+        {id: "2", title: "Windows", votes: 1, author: "1"}
     ]
 };
 
 export const DescendingOrderedNewsList = Template.bind({});
 DescendingOrderedNewsList.args = {
     initialDescendingOrder: true,
-    initialNewsListItems: [
-        {id: 0, title: "macOS", votes: 3},
-        {id: 1, title: "Linux", votes: 2},
-        {id: 2, title: "Windows", votes: 1}
+    posts: [
+        {id: "0", title: "macOS", votes: 3, author: "1"},
+        {id: "1", title: "Linux", votes: 2, author: "1"},
+        {id: "2", title: "Windows", votes: 1, author: "1"}
     ]
 };
