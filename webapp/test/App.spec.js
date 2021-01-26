@@ -270,8 +270,11 @@ describe('News List', () => {
               id: '0',
               title: 'macOS',
               votes: 0,
+              userVote: null,
+              __typename: 'Post',
               author: {
-                id: '0'
+                id: '0',
+                __typename: 'User',
               }
             }
           ]
