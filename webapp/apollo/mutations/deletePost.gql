@@ -1,3 +1,4 @@
+# __typename added to not break mock-apollo-client
 mutation deletePost($id: ID!) {
     deletePost(id: $id) {
         id
