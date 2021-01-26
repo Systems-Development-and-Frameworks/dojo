@@ -42,7 +42,7 @@ export default {
     posts: {
       prefetch: true,
       query: posts,
-      context () {
+      context () { // need to set token manually on SSR
         const token = this.$store.getters['auth/token']
         return token
             ? {
