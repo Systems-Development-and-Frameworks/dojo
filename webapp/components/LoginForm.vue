@@ -39,7 +39,7 @@
         </tr>
         <tr v-if="error">
           <td colspan="2">
-            {{ error }}
+            <span id="login-error-message">{{ error }}</span>
           </td>
         </tr>
         </tbody>
@@ -51,6 +51,7 @@
 <script>
 import login from '../apollo/mutations/login'
 import { mapActions, mapGetters } from 'vuex'
+import { ApolloError } from '@apollo/client'
 
 export default {
   data () {
@@ -89,8 +90,11 @@ export default {
           })
         }
       } catch (e) {
-        console.log(e)
-        this.error = e
+        if (e instanceof ApolloError) {
+          this.error = e.graphQLErrors.join(",\n")
+        } else {
+          this.error = e
+        }
       } finally {
         this.submitting = false
       }

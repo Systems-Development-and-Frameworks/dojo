@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginForm when no user is logged in should show the login form 1`] = `
+"<div>
+  <form id=\\"form-login\\">
+    <table>
+      <tbody>
+        <tr>
+          <td><label for=\\"input-email\\"> E-Mail </label></td>
+          <td><input id=\\"input-email\\" type=\\"text\\" placeholder=\\"Enter your e-mail address..\\" required=\\"required\\"></td>
+        </tr>
+        <tr>
+          <td><label for=\\"input-password\\"> Password </label></td>
+          <td><input id=\\"input-password\\" type=\\"password\\" placeholder=\\"Enter your password..\\" required=\\"required\\"></td>
+        </tr>
+        <tr>
+          <td colspan=\\"2\\"><input type=\\"submit\\" value=\\"Login\\" disabled=\\"disabled\\"></td>
+        </tr>
+        <!---->
+        <!---->
+      </tbody>
+    </table>
+  </form>
+</div>"
+`;
+
+exports[`LoginForm when user is logged in should show only the logged in message 1`] = `
+"<div><span>You're logged in!</span>
+  <nuxtlink-stub to=\\"/\\">Return to home page</nuxtlink-stub>
+  or
+  <a href=\\"#\\">return to the previously browsed page</a></div>"
+`;
