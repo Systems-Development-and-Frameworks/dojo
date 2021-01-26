@@ -19,19 +19,31 @@ $ (webapp) npm install
 ### Run unit tests
 
 ```
-$ (webapp) npm run test:unit
+$ (webapp) npm run test
 ```
 
 ### Compiles and hot-reloads for development
 
 ```
-$ (webapp) npm run serve
+$ (webapp) npm run dev
 ```
 
-### Compiles and minifies for production
+### Compiles and minifies for production (server build)
 
 ```
 $ (webapp) npm run build
+```
+
+### Compiles and minifies for production (static build)
+
+```
+$ (webapp) npm run generate
+```
+
+### Serve in production
+
+```
+$ (webapp) npm run start
 ```
 
 ### Run linter
