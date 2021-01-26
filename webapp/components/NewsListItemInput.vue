@@ -4,20 +4,25 @@
       Add news title:
       <input type="text" v-model.trim="title" placeholder="Enter some new news title.."/>
     </label>
-    <input type="submit" value="Add" :disabled="!title.length"/>
+    <input
+        type="submit"
+        value="Add"
+        :disabled="!title.length"
+        :title="!title.length ? 'Please enter a title' : null"
+    />
   </form>
 </template>
 
 <script>
 
 export default {
-  emits: ["create"],
-  data() {
+  emits: ['create'],
+  data () {
     return {
-      title: ""
+      title: ''
     }
   }
-};
+}
 </script>
 
 <style scoped>

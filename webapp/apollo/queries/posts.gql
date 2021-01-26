@@ -1,0 +1,13 @@
+{
+    posts {
+        id
+        title
+        votes
+        userVote
+        author {
+            id
+            __typename
+        }
+        __typename
+    }
+}

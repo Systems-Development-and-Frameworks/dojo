@@ -5,9 +5,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [ main, exercise3 ]
+    branches: [ main, exercise7 ]
   pull_request:
-    branches: [ main, exercise3 ]
+    branches: [ main, exercise7 ]
 
 defaults:
   run:
@@ -31,4 +31,4 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-      - run: npm run test:unit
+      - run: npm run test

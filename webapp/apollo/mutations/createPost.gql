@@ -1,0 +1,14 @@
+# __typename added to not break mock-apollo-client
+mutation createPost($title: String!) {
+    createPost(post: { title: $title }) {
+        id
+        title
+        votes
+        userVote
+        __typename
+        author {
+            id
+            __typename
+        }
+    }
+}

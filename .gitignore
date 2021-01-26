@@ -2,6 +2,8 @@ git-crypt-key
 *.DS_Store
 */node_modules
 */dist
+*/.nuxt-storybook
+*/storybook-static
 
 
 # local env files
