@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginMenu for a user that is logged in should show only the logout button and the user id 1`] = `"<div><button id=\\"logout-button\\">Logout</button> <span>userId: 1234</span></div>"`;
+
+exports[`LoginMenu for a user that is not logged in should show only the login button 1`] = `
+"<div>
+  <nuxtlink-stub to=\\"[object Object]\\"><button id=\\"login-button\\">Login</button></nuxtlink-stub>
+</div>"
+`;

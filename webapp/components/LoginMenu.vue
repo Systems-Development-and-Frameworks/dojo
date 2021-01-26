@@ -1,10 +1,10 @@
 <template>
   <div>
     <nuxt-link v-if="!isAuthenticated" :to="{name: 'login', params: {returnPath: '/'}}">
-      <button>Login</button>
+      <button id="login-button">Login</button>
     </nuxt-link>
     <template v-else>
-      <button @click="logout">Logout</button>
+      <button @click="logout" id="logout-button">Logout</button>
       <span>userId: {{ userId }}</span>
     </template>
   </div>
