@@ -3,7 +3,7 @@
       class="grid grid-cols-1 gap-0 auto-rows-max lg:grid-cols-3 lg:gap-4
        justify-items-center items-center content-around"
   >
-    <div v-for="(card, index) in cards" :key="index" class="flex flex-row lg:flex-col" style="flex-basis: 33%">
+    <div v-for="(card, index) in cards" :key="index" class="flex flex-row lg:flex-col">
       <div class="inline-flex items-center justify-center bg-red-200 h-14 w-14 self-auto
                   rounded-full lg:self-center">
         {{ card.imagePlaceHolder }}
