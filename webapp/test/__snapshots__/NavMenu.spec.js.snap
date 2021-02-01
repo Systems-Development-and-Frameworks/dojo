@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`NavMenu for a user that is logged in should show only the logout button and the user id 1`] = `
+"<div class=\\"flex justify-between flex-row\\">
+  <nuxtlinkbutton-stub to=\\"/\\" color=\\"gray\\" href=\\"/\\">Posts</nuxtlinkbutton-stub>
+  <nuxtlinkbutton-stub to=\\"/about\\" color=\\"gray\\" href=\\"/about\\">About us</nuxtlinkbutton-stub>
+  <basicbutton-stub color=\\"red\\" id=\\"logout-button\\">Logout</basicbutton-stub>
+</div>"
+`;
+
+exports[`NavMenu for a user that is not logged in should show only the login button 1`] = `
+"<div class=\\"flex justify-between flex-row\\">
+  <nuxtlinkbutton-stub to=\\"/\\" color=\\"gray\\" href=\\"/\\">Posts</nuxtlinkbutton-stub>
+  <nuxtlinkbutton-stub to=\\"/about\\" color=\\"gray\\" href=\\"/about\\">About us</nuxtlinkbutton-stub>
+  <nuxtlinkbutton-stub to=\\"[object Object]\\" color=\\"green\\" href=\\"/login\\" id=\\"login-button\\">
+    Login
+  </nuxtlinkbutton-stub>
+</div>"
+`;

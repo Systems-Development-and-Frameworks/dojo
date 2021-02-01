@@ -1,8 +1,11 @@
 <template>
-  <div>
-    <LoginMenu/>
-    <hr>
-    <Nuxt/>
+  <div class="flex flex-col justify-between min-h-screen">
+    <NavBar/>
+    <Nuxt class="flex-grow py-4"/>
+    <div>
+      <hr>
+      <BasicFooter/>
+    </div>
   </div>
 </template>
 
