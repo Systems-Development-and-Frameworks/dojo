@@ -1,6 +1,10 @@
 <template>
-  <div id="app">
-    <h1>News</h1>
+  <main class="flex flex-col items-center">
+    <h1 class="text-xl font-semibold">News</h1>
+    <NewsListItemInput class="py-2.5" @create="createNewsListItem($event);" v-if="isAuthenticated"/>
+    <BasicButton :color="'gray'" type="button" @click.native="toggleOrder"
+                 href="#" :disabled="!posts.length" id="reverse-order-button">Reverse Order
+    </BasicButton>
     <div class="news-list-empty-message" v-if="!posts.length">
       <span id="list-empty-message">{{ listEmptyMessage }}</span>
     </div>
@@ -20,10 +24,7 @@
         />
       </div>
     </div>
-    <NewsListItemInput @create="createNewsListItem($event);" v-if="isAuthenticated"/>
-    <button type="button" @click="toggleOrder" :disabled="!posts.length" id="reverse-order-button">Reverse Order
-    </button>
-  </div>
+  </main>
 </template>
 
 <script>
@@ -35,14 +36,14 @@ import upvotePost from '../apollo/mutations/upvotePost.gql'
 import downvotePost from '../apollo/mutations/downvotePost.gql'
 import deletePost from '../apollo/mutations/deletePost.gql'
 import createPost from '../apollo/mutations/createPost.gql'
-import { mapGetters } from 'vuex'
+import {mapGetters} from 'vuex'
 
 export default {
   apollo: {
     posts: {
       prefetch: true,
       query: posts,
-      context () { // need to set token manually on SSR
+      context() { // need to set token manually on SSR
         const token = this.$store.getters['auth/token']
         return token
             ? {
@@ -68,7 +69,7 @@ export default {
       default: true
     }
   },
-  data () {
+  data() {
     return {
       //newsListItems: [...this.initialNewsListItems],
       descendingOrder: this.initialDescendingOrder,
@@ -76,13 +77,13 @@ export default {
     }
   },
   methods: {
-    async createNewsListItem (title) {
+    async createNewsListItem(title) {
       try {
         await this.$apollo.mutate({
           mutation: createPost,
-          variables: { title },
-          update (store, { data: { createPost } }) {
-            const data = store.readQuery({ query: posts })
+          variables: {title},
+          update(store, {data: {createPost}}) {
+            const data = store.readQuery({query: posts})
             const newPosts = [...data.posts]
             newPosts.push(createPost)
             store.writeQuery({
@@ -92,21 +93,21 @@ export default {
               }
             })
           }
-        }).then(({ data }) => data && data.createPost)
+        }).then(({data}) => data && data.createPost)
       } catch (e) {
         console.log(e)
       }
     },
-    toggleOrder () {
+    toggleOrder() {
       this.descendingOrder = !this.descendingOrder
     },
-    async removeNewsListItem (id) {
+    async removeNewsListItem(id) {
       try {
         await this.$apollo.mutate({
           mutation: deletePost,
-          variables: { id },
-          update (store) {
-            const data = store.readQuery({ query: posts })
+          variables: {id},
+          update(store) {
+            const data = store.readQuery({query: posts})
             const index = data.posts.findIndex(p => p.id === id)
             if (index !== -1) {
               const newPosts = [...data.posts]
@@ -119,34 +120,34 @@ export default {
               })
             }
           }
-        }).then(({ data }) => data && data.deletePost)
+        }).then(({data}) => data && data.deletePost)
       } catch (e) {
         console.log(e)
       }
     },
-    async upvotePost (id) {
+    async upvotePost(id) {
       try {
         await this.$apollo.mutate({
           mutation: upvotePost,
-          variables: { id },
-        }).then(({ data }) => data && data.upvotePost)
+          variables: {id},
+        }).then(({data}) => data && data.upvotePost)
       } catch (e) {
         console.log(e)
       }
     },
-    async downvotePost (id) {
+    async downvotePost(id) {
       try {
         await this.$apollo.mutate({
           mutation: downvotePost,
-          variables: { id },
-        }).then(({ data }) => data && data.downvotePost)
+          variables: {id},
+        }).then(({data}) => data && data.downvotePost)
       } catch (e) {
         console.log(e)
       }
     }
   },
   computed: {
-    sortedNewsListItems () {
+    sortedNewsListItems() {
       const compareFn = this.descendingOrder
           ? (a, b) => b.votes - a.votes
           : (a, b) => a.votes - b.votes
@@ -159,21 +160,3 @@ export default {
 }
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-
-div.news-list-empty-message {
-  padding: 2rem 0;
-}
-
-#newslist {
-  padding: 2rem 0;
-}
-</style>

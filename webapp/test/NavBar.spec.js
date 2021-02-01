@@ -5,14 +5,14 @@ import { createLocalVue, shallowMount } from '@vue/test-utils'
 
 import Vuex from 'vuex'
 
-import LoginMenu from '@/components/LoginMenu'
+import NavBar from '@/components/NavBar'
 import { actions, getters, mutations, state } from '@/store/auth'
 
 import jwt_decode from 'jwt-decode'
 
 jest.mock('jwt-decode')
 
-describe('LoginMenu', () => {
+describe('NavBar', () => {
   const localVue = createLocalVue()
   localVue.use(Vuex)
 
@@ -31,11 +31,12 @@ describe('LoginMenu', () => {
       }
     })
 
-    wrapper = shallowMount(LoginMenu, {
+    wrapper = shallowMount(NavBar, {
       localVue,
       store,
       stubs: {
-        NuxtLink: true,
+        BasicButton: true,
+        NavMenu: true,
       },
       ...appOptions
     })
@@ -47,30 +48,8 @@ describe('LoginMenu', () => {
     store = null
   })
 
-  describe('for a user that is not logged in', () => {
-    it('should show only the login button', async () => {
-      await createLoginMenu()
-      await wrapper.vm.$nextTick()
-
-      expect(wrapper.find('#login-button').exists()).toBe(true)
-      expect(wrapper.find('#logout-button').exists()).toBe(false)
-      expect(wrapper.html()).toMatchSnapshot()
-    })
-  })
-
   describe('for a user that is logged in', () => {
     jwt_decode.mockReturnValue({ userId: '1234' })
-
-    it('should show only the logout button and the user id', async () => {
-      await createLoginMenu()
-      await wrapper.vm.$nextTick()
-
-      await store.dispatch('auth/setToken', 'someToken')
-
-      expect(wrapper.find('#login-button').exists()).toBe(false)
-      expect(wrapper.find('#logout-button').exists()).toBe(true)
-      expect(wrapper.html()).toMatchSnapshot()
-    })
 
     describe('triggering the logout button', () => {
       let $nuxt, $apolloHelpers
@@ -87,7 +66,7 @@ describe('LoginMenu', () => {
         await store.dispatch('auth/setToken', 'someToken')
         await wrapper.vm.$nextTick()
 
-        await wrapper.find('#logout-button').trigger('click')
+        await wrapper.vm.logout()
         await wrapper.vm.$nextTick()
       }
 

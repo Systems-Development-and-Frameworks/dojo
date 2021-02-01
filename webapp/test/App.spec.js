@@ -75,6 +75,9 @@ describe('News List', () => {
       localVue,
       apolloProvider,
       store,
+      stubs: {
+        BasicButton: true,
+      },
       ...appOptions
     })
     await wrapper.vm.$nextTick()
@@ -575,7 +578,7 @@ describe('News List', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.find('#reverse-order-button').element.hasAttribute('disabled')).toBeTruthy()
-      expect(wrapper.find('#reverse-order-button').attributes('disabled')).toEqual('disabled')
+      expect(wrapper.find('#reverse-order-button').attributes('disabled')).toEqual('true')
     })
 
     it('is disabled upon empty list', async () => {
@@ -619,7 +622,7 @@ describe('News List', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.find('#reverse-order-button').element.hasAttribute('disabled')).toBeTruthy()
-      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).toEqual('disabled')
+      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).toEqual('true')
     })
 
     it('shows up again upon non-empty list', async () => {
@@ -646,13 +649,13 @@ describe('News List', () => {
       })
 
       expect(wrapper.find('#reverse-order-button').element.hasAttribute('disabled')).toBeTruthy()
-      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).toEqual('disabled')
+      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).toEqual('true')
 
       await wrapper.vm.createNewsListItem('Linux')
       await wrapper.vm.$nextTick()
 
       expect(wrapper.find('#reverse-order-button').element.hasAttribute('disabled')).not.toBeTruthy()
-      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).not.toEqual('disabled')
+      expect(wrapper.find('#reverse-order-button').element.getAttribute('disabled')).not.toEqual('true')
     })
   })
 })
