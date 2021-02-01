@@ -5,9 +5,9 @@ name: Build, Test, Lint
 
 on:
   push:
-    branches: [ main, exercise7 ]
+    branches: [ main, exercise8 ]
   pull_request:
-    branches: [ main, exercise7 ]
+    branches: [ main, exercise8 ]
 
 defaults:
   run:
@@ -29,6 +29,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run test
+      - run: yarn install --frozen-lockfile
+      - run: yarn run lint
+      - run: yarn run test
